@@ -1,0 +1,167 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd"
+         child.project.url.inherit.append.path="false">
+  <modelVersion>4.0.0</modelVersion>
+
+  <groupId>io.github.giufaz</groupId>
+  <artifactId>mgnl-node-locale-variants-parent</artifactId>
+  <version>0.1.0-SNAPSHOT</version>
+  <packaging>pom</packaging>
+
+  <name>Magnolia Node Locale Variants (parent)</name>
+  <description>Locale variants of any JCR node for Magnolia 6.4+: content items, pages and generic nodes. Integrates with Magnolia apps, dialogs and the Delivery API.</description>
+  <url>https://github.com/giufaz/mgnl-node-locale-variants</url>
+
+
+  <developers>
+    <developer>
+      <id>giufaz</id>
+      <name>Giulian</name>
+      <url>https://github.com/giufaz</url>
+    </developer>
+  </developers>
+
+  <scm child.scm.connection.inherit.append.path="false" child.scm.developerConnection.inherit.append.path="false"
+       child.scm.url.inherit.append.path="false">
+    <connection>scm:git:https://github.com/giufaz/mgnl-node-locale-variants.git</connection>
+    <developerConnection>scm:git:ssh://git@github.com/giufaz/mgnl-node-locale-variants.git</developerConnection>
+    <url>https://github.com/giufaz/mgnl-node-locale-variants</url>
+  </scm>
+
+  <modules>
+    <module>module</module>
+    <module>demo</module>
+  </modules>
+
+  <properties>
+    <maven.compiler.release>17</maven.compiler.release>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <!-- Built and tested against; runs on 6.4.x -->
+    <magnolia.version>6.4.10</magnolia.version>
+  </properties>
+
+  <dependencyManagement>
+    <dependencies>
+      <dependency>
+        <groupId>info.magnolia.bundle</groupId>
+        <artifactId>magnolia-bundle-parent</artifactId>
+        <version>${magnolia.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+      <dependency>
+        <groupId>io.github.giufaz</groupId>
+        <artifactId>mgnl-node-locale-variants</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
+
+  <build>
+    <pluginManagement>
+      <plugins>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-compiler-plugin</artifactId>
+          <version>3.13.0</version>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-surefire-plugin</artifactId>
+          <version>3.5.2</version>
+        </plugin>
+      </plugins>
+    </pluginManagement>
+
+    <!-- Required for Magnolia modules -->
+    <resources>
+      <resource>
+        <directory>src/main/resources</directory>
+        <filtering>true</filtering>
+        <includes>
+          <include>META-INF/magnolia/*.xml</include>
+        </includes>
+      </resource>
+      <resource>
+        <directory>src/main/resources</directory>
+        <filtering>false</filtering>
+        <excludes>
+          <exclude>META-INF/magnolia/*.xml</exclude>
+        </excludes>
+      </resource>
+    </resources>
+  </build>
+
+  <profiles>
+    <profile>
+      <id>release</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.codehaus.mojo</groupId>
+            <artifactId>flatten-maven-plugin</artifactId>
+            <version>1.6.0</version>
+            <configuration>
+              <flattenMode>ossrh</flattenMode>
+              <updatePomFile>true</updatePomFile>
+              <pomElements>
+                <repositories>remove</repositories>
+              </pomElements>
+            </configuration>
+            <executions>
+              <execution>
+                <id>flatten</id>
+                <phase>process-resources</phase>
+                <goals>
+                  <goal>flatten</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-source-plugin</artifactId>
+            <version>3.3.1</version>
+            <executions>
+              <execution>
+                <id>attach-sources</id>
+                <goals>
+                  <goal>jar-no-fork</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-javadoc-plugin</artifactId>
+            <version>3.11.2</version>
+            <configuration>
+              <doclint>all,-missing</doclint>
+              <quiet>true</quiet>
+            </configuration>
+            <executions>
+              <execution>
+                <id>attach-javadocs</id>
+                <goals>
+                  <goal>jar</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
+
+  <repositories>
+    <repository>
+      <id>magnolia.public</id>
+      <url>https://nexus.magnolia-cms.com/repository/public/</url>
+      <snapshots>
+        <enabled>false</enabled>
+      </snapshots>
+    </repository>
+  </repositories>
+</project>
