@@ -27,6 +27,15 @@
     <dependency>
       <name>site</name>
     </dependency>
+    <dependency>
+      <name>magnolia-rest-jcr-delivery</name>
+    </dependency>
+    <!-- Page variants get their missing areas only if Pages REST exists at runtime,
+         which should be the default case -->
+    <dependency>
+      <name>pages-jcr-rest</name>
+      <optional>true</optional>
+    </dependency>
   </dependencies>
 
   <!-- Node types are registered once per Jackrabbit repository: available in every workspace of "magnolia" -->
