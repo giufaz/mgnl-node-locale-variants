@@ -1,0 +1,6 @@
+<'mgnl'='http://www.magnolia.info/jcr/mgnl'>
+<'lvd'='http://giufaz.com/jcr/locale-variants-demo/1.0'>
+
+// Demo item: extends mgnl:content, so it is published and versioned on its own and can have locale variants
+[lvd:promo] > mgnl:content
+  orderable

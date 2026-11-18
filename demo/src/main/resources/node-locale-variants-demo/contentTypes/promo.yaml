@@ -1,0 +1,18 @@
+datasource:
+  workspace: promos
+
+model:
+  nodeType: lvd:promo
+  properties:
+    - name: name
+      label: Name
+    - name: title
+      label: Title
+      i18n: true
+    - name: text
+      label: Text
+      type: richText
+      i18n: true
+    - name: cta
+      label: Call to action
+      i18n: true

@@ -1,0 +1,29 @@
+<!DOCTYPE module SYSTEM "module.dtd">
+<module>
+  <name>node-locale-variants-demo</name>
+  <displayName>Node Locale Variants (demo)</displayName>
+  <description>Sample site, content type and Delivery endpoints to try node-locale-variants. Not for production.</description>
+  <version>${project.version}</version>
+
+  <dependencies>
+    <dependency>
+      <name>node-locale-variants</name>
+    </dependency>
+    <dependency>
+      <name>content-types</name>
+    </dependency>
+    <dependency>
+      <name>pages-jcr-rest</name>
+    </dependency>
+  </dependencies>
+
+  <repositories>
+    <repository>
+      <name>magnolia</name>
+      <workspaces>
+        <workspace>promos</workspace>
+      </workspaces>
+      <nodeTypeFile>/mgnl-nodetypes/node-locale-variants-demo-nodetypes.cnd</nodeTypeFile>
+    </repository>
+  </repositories>
+</module>

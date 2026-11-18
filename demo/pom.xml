@@ -10,7 +10,7 @@
     <version>0.2.0-SNAPSHOT</version>
   </parent>
 
-  <!-- Sample content to try the module; never released -->
+  <!-- Sample content to try and test the module; never released -->
   <artifactId>mgnl-node-locale-variants-demo</artifactId>
   <packaging>jar</packaging>
   <name>Magnolia Node Locale Variants (demo)</name>
@@ -23,6 +23,17 @@
     <dependency>
       <groupId>io.github.giufaz</groupId>
       <artifactId>mgnl-node-locale-variants</artifactId>
+    </dependency>
+    <!-- GroovyScriptEndpoint (demo and test driver): both are in the Magnolia webapp -->
+    <dependency>
+      <groupId>info.magnolia.rest</groupId>
+      <artifactId>magnolia-rest-integration</artifactId>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.groovy</groupId>
+      <artifactId>groovy</artifactId>
+      <scope>provided</scope>
     </dependency>
   </dependencies>
 </project>

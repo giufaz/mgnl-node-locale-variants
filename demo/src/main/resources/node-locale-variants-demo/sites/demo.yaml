@@ -1,0 +1,9 @@
+# Demo site with three locales (CE has no multisite): en (default), de, de_CH
+i18n:
+  class: info.magnolia.cms.i18n.DefaultI18nContentSupport
+  enabled: true
+  fallbackLocale: en
+  locales:
+    en: {language: en, enabled: true}
+    de: {language: de, enabled: true}
+    de_CH: {language: de, country: CH, enabled: true}

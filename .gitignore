@@ -6,3 +6,6 @@ target/
 
 # Local dev scripts, never committed
 devtools/
+
+# Local integration tests, not versioned for now
+integration-tests/

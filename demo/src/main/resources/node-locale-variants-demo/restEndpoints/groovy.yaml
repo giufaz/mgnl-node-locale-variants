@@ -1,0 +1,3 @@
+# Demo and test driver only: POST a Groovy script as text/plain to /.rest/lv-demo/groovy
+class: info.magnolia.rest.registry.ConfiguredEndpointDefinition
+implementationClass: com.giufaz.magnolia.localevariants.demo.GroovyScriptEndpoint

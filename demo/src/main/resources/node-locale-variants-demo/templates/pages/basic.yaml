@@ -1,0 +1,7 @@
+# SPA page template with one area, for the pages endpoint
+title: Basic page
+renderType: spa
+class: info.magnolia.rendering.spa.renderer.SpaRenderableDefinition
+areas:
+  main:
+    title: Main

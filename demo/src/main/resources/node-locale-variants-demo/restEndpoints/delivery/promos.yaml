@@ -1,0 +1,9 @@
+# Promos: /.rest/delivery/promos
+$type: jcrDeliveryEndpoint_v2
+workspace: promos
+rootPath: /
+nodeTypes:
+  - lvd:promo
+depth: 2
+includeSystemProperties: true
+bypassWorkspaceAcls: true

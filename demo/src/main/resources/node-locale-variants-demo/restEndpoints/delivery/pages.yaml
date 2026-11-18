@@ -1,0 +1,5 @@
+# Pages, with area autogeneration: /.rest/delivery/pages
+$type: jcrPagesDeliveryEndpoint_v2
+workspace: website
+depth: 2
+bypassWorkspaceAcls: true
