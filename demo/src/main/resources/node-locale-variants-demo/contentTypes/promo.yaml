@@ -16,3 +16,6 @@ model:
     - name: cta
       label: Call to action
       i18n: true
+    - name: related
+      label: Related promo
+      type: promo

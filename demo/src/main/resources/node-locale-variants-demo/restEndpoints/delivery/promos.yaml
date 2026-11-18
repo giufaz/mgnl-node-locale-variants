@@ -7,3 +7,9 @@ nodeTypes:
 depth: 2
 includeSystemProperties: true
 bypassWorkspaceAcls: true
+references:
+  - name: related
+    propertyName: related
+    referenceResolver:
+      $type: jcrReferenceResolver
+      targetWorkspace: promos

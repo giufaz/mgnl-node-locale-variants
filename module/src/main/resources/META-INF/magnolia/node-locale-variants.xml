@@ -3,6 +3,7 @@
   <name>node-locale-variants</name>
   <displayName>Node Locale Variants</displayName>
   <description>${project.description}</description>
+  <class>com.giufaz.magnolia.localevariants.NodeLocaleVariantsModule</class>
   <version>${project.version}</version>
 
   <components>
@@ -15,6 +16,13 @@
     <component>
       <type>com.giufaz.magnolia.localevariants.LocaleVariantCreator</type>
       <implementation>com.giufaz.magnolia.localevariants.LocaleVariantCreator</implementation>
+      <scope>singleton</scope>
+    </component>
+    <!-- Class that identifies reference resolver to wrap with localized variants logic: 
+        a project can map its own implementation -->
+    <component>
+      <type>com.giufaz.magnolia.localevariants.delivery.JcrReferenceResolverDetector</type>
+      <implementation>com.giufaz.magnolia.localevariants.delivery.JcrReferenceResolverDetector</implementation>
       <scope>singleton</scope>
     </component>
   </components>

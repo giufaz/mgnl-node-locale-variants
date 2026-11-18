@@ -11,12 +11,18 @@ import info.magnolia.cms.i18n.I18nContentSupport;
 import info.magnolia.context.MgnlContext;
 import info.magnolia.module.site.Site;
 import info.magnolia.module.site.SiteManager;
+import info.magnolia.rest.delivery.DeliveryContext;
 import info.magnolia.rest.delivery.jcr.NodesResult;
+import info.magnolia.rest.reference.ReferenceResolver;
+import info.magnolia.rest.reference.jcr.JcrReferenceResolver;
 import info.magnolia.test.mock.MockWebContext;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.function.Predicate;
 
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
@@ -42,6 +48,7 @@ class LocaleVariantResponseFilterTest {
 
     private final I18nContentSupport i18n = mock(I18nContentSupport.class);
     private final SiteManager siteManager = mock(SiteManager.class);
+    private final DeliveryContext<?> deliveryContext = new DeliveryContext<>();
     private final LocaleVariantResponseFilter publicFilter = filter(false);
 
     private Node promo;
@@ -144,8 +151,70 @@ class LocaleVariantResponseFilterTest {
         assertEquals(List.of(promo, broken), nodes(served), "all or nothing: promo is not swapped either");
     }
 
+    @Test
+    @SuppressWarnings("rawtypes")
+    void test_filter_referencesWrapJcrResolversOnly() {
+        ReferenceResolver jcr = mock(JcrReferenceResolver.class);
+        ReferenceResolver custom = item -> Optional.empty();
+        Predicate relatedProperty = item -> true;
+        Predicate customProperty = item -> false;
+        Map<Predicate, ReferenceResolver<?, ?>> endpointMap = new HashMap<>();
+        endpointMap.put(relatedProperty, jcr);
+        endpointMap.put(customProperty, custom);
+        deliveryContext.setResolvers(endpointMap);
+
+        filtered(publicFilter, promo, LANG_DE, null);
+
+        Map<Predicate, ReferenceResolver<?, ?>> served = deliveryContext.getResolvers();
+        assertNotSame(endpointMap, served, "a new map");
+        assertSame(jcr, endpointMap.get(relatedProperty), "the endpoint's own map is not changed");
+        assertInstanceOf(LocaleVariantAwareReferenceResolverWrapper.class, served.get(relatedProperty));
+        assertSame(custom, served.get(customProperty), "non-JCR resolvers are left as they are");
+        assertEquals(new ArrayList<>(endpointMap.keySet()), new ArrayList<>(served.keySet()), "same iteration order");
+    }
+
+    @Test
+    void test_filter_referencesWithoutExplicitLanguage() {
+        Map<Predicate, ReferenceResolver<?, ?>> endpointMap = jcrResolverMap();
+        filtered(publicFilter, promo, Map.of(), null);
+        assertSame(endpointMap, deliveryContext.getResolvers());
+    }
+
+    @Test
+    void test_filter_referencesOnQueryResults() {
+        Map<Predicate, ReferenceResolver<?, ?>> endpointMap = jcrResolverMap();
+        filtered(publicFilter, new NodesResult(new NodeIteratorAdapter(List.of(promo)), 1), LANG_DE, null);
+        assertSame(endpointMap, deliveryContext.getResolvers(), "queries are out of scope, references included");
+    }
+
+    @Test
+    void test_filter_referencesAfterEntityError() throws RepositoryException {
+        Map<Predicate, ReferenceResolver<?, ?>> endpointMap = jcrResolverMap();
+        filtered(publicFilter, brokenNode(), LANG_DE, null);
+        assertSame(endpointMap, deliveryContext.getResolvers(), "single node failed: references stay out of the box");
+        filtered(publicFilter, new NodeIteratorAdapter(List.of(promo, brokenNode())), LANG_DE, null);
+        assertSame(endpointMap, deliveryContext.getResolvers(), "node list failed: references stay out of the box");
+    }
+
+    @Test
+    void test_filter_referencesWithError() {
+        LocaleVariantResponseFilter filter = new LocaleVariantResponseFilter(new LocaleVariantStructure(siteManager),
+                new JcrReferenceResolverDetector(), () -> {
+                    throw new IllegalStateException("no delivery context");
+                }, false);
+        assertSame(variantDe, filtered(filter, promo, LANG_DE, null), "the variant is still served, no exception");
+    }
+
+    @SuppressWarnings("rawtypes")
+    private Map<Predicate, ReferenceResolver<?, ?>> jcrResolverMap() {
+        Map<Predicate, ReferenceResolver<?, ?>> endpointMap = new HashMap<>(Map.of(item -> true, mock(JcrReferenceResolver.class)));
+        deliveryContext.setResolvers(endpointMap);
+        return endpointMap;
+    }
+
     private LocaleVariantResponseFilter filter(boolean isAuthorInstance) {
-        return new LocaleVariantResponseFilter(new LocaleVariantStructure(siteManager), isAuthorInstance);
+        return new LocaleVariantResponseFilter(new LocaleVariantStructure(siteManager), new JcrReferenceResolverDetector(),
+                () -> deliveryContext, isAuthorInstance);
     }
 
     // Runs the filter and returns the entity it leaves on the response
