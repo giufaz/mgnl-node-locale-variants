@@ -1,0 +1,42 @@
+<!DOCTYPE module SYSTEM "module.dtd">
+<module>
+  <name>node-locale-variants</name>
+  <displayName>Node Locale Variants</displayName>
+  <description>${project.description}</description>
+  <version>${project.version}</version>
+
+  <components>
+    <id>main</id>
+    <component>
+      <type>com.giufaz.magnolia.localevariants.LocaleVariantStructure</type>
+      <implementation>com.giufaz.magnolia.localevariants.LocaleVariantStructure</implementation>
+      <scope>singleton</scope>
+    </component>
+    <component>
+      <type>com.giufaz.magnolia.localevariants.LocaleVariantCreator</type>
+      <implementation>com.giufaz.magnolia.localevariants.LocaleVariantCreator</implementation>
+      <scope>singleton</scope>
+    </component>
+  </components>
+
+  <dependencies>
+    <dependency>
+      <name>core</name>
+      <version>6.4/*</version>
+    </dependency>
+    <dependency>
+      <name>site</name>
+    </dependency>
+  </dependencies>
+
+  <!-- Node types are registered once per Jackrabbit repository: available in every workspace of "magnolia" -->
+  <repositories>
+    <repository>
+      <name>magnolia</name>
+      <workspaces>
+        <workspace>website</workspace>
+      </workspaces>
+      <nodeTypeFile>/mgnl-nodetypes/node-locale-variants-nodetypes.cnd</nodeTypeFile>
+    </repository>
+  </repositories>
+</module>
