@@ -3,3 +3,6 @@ target/
 *.iml
 .idea/
 .vscode/
+
+# Local dev scripts, never committed
+devtools/

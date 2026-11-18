@@ -1,0 +1,12 @@
+<'mgnl'='http://www.magnolia.info/jcr/mgnl'>
+<'lv'='http://giufaz.com/jcr/locale-variants/1.0'>
+
+// Container of the locale variants of a node: <original-node>/localeVariants.
+// Extends mgnl:content (not mgnl:contentNode): it is published and versioned on its own.
+// Publishing flow indenpendent from the original.
+[lv:localeVariants] > mgnl:content
+  orderable
+
+// Marks a locale variant <original>/localeVariants/variant_<locale>. The variant keeps the
+// original's primary type; the locale is in the node name only.
+[lv:localeVariant] mixin
