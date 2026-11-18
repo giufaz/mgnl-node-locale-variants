@@ -123,6 +123,13 @@ public class LocaleVariantStructure {
         return variants;
     }
 
+    /** Whether a variant exists for exactly this locale: no i18n fallback. */
+    public boolean hasVariant(Node original, Locale locale) throws RepositoryException {
+        String name = deriveVariantName(original, locale);
+        Optional<Node> container = getVariantsContainer(original);
+        return container.isPresent() && container.get().hasNode(name) && isValidVariant(container.get().getNode(name));
+    }
+
     // variant_de_CH, or variant_de-CH on IETF sites → Locale("de", "CH")
     public Locale getVariantLocale(Node variant) throws RepositoryException {
         String suffix = variant.getName().substring(VARIANT_PREFIX.length());
@@ -141,6 +148,16 @@ public class LocaleVariantStructure {
             }
         }
         return true;
+    }
+
+    /** Locales the node's site supports for variants: its enabled locales without the default one, existing variants included. */
+    public List<Locale> getSupportedVariantLocales(Node original) {
+        I18nContentSupport i18n = getSiteI18n(original);
+        if (!i18n.isEnabled()) {
+            return List.of();
+        }
+        Locale defaultLocale = i18n.getDefaultLocale();
+        return i18n.getLocales().stream().filter(locale -> !locale.equals(defaultLocale)).toList();
     }
 
     public boolean isVariantsContainer(Node node) throws RepositoryException {

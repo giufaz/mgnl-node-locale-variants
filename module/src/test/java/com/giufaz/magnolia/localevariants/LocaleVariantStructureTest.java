@@ -135,6 +135,23 @@ class LocaleVariantStructureTest {
     }
 
     @Test
+    void test_hasVariant_onlyValidVariantOfThatLocale() throws RepositoryException {
+        singleSite(i18n(Locale.GERMAN));
+        Node promo = original(variant("variant_de"), child("variant_fr"));
+        assertTrue(variantStructure.hasVariant(promo, Locale.GERMAN));
+        assertFalse(variantStructure.hasVariant(promo, DE_CH), "another locale, no fallback");
+        assertFalse(variantStructure.hasVariant(promo, Locale.FRENCH), "node without mixin");
+        assertFalse(variantStructure.hasVariant(node(1, node(0, null), "mgnl:versionable"), Locale.GERMAN), "no container");
+    }
+
+    @Test
+    void test_hasVariant_withoutLocale() throws RepositoryException {
+        Node withoutContainer = node(1, node(0, null), "mgnl:versionable");
+        assertThrows(IllegalArgumentException.class, () -> variantStructure.hasVariant(withoutContainer, null), "no container");
+        assertThrows(IllegalArgumentException.class, () -> variantStructure.hasVariant(original(variant("variant_de")), null), "with container");
+    }
+
+    @Test
     void test_getVariantLocale_withDefaultAndIetfNames() throws RepositoryException {
         assertEquals(Locale.GERMAN, variantStructure.getVariantLocale(variant("variant_de")));
         assertEquals(DE_CH, variantStructure.getVariantLocale(variant("variant_de_CH")));
@@ -164,6 +181,15 @@ class LocaleVariantStructureTest {
         assertFalse(variantStructure.canHaveVariants(container), "container");
         assertFalse(variantStructure.canHaveVariants(variant), "variant");
         assertFalse(variantStructure.canHaveVariants(insideVariant), "inside a variant");
+    }
+
+    @Test
+    void test_getSupportedVariantLocales_siteLocalesWithoutDefault() {
+        Node promo = mock(Node.class);
+        singleSite(i18n(Locale.GERMAN));
+        assertEquals(List.of(Locale.GERMAN, DE_CH, Locale.FRENCH), variantStructure.getSupportedVariantLocales(promo), "en is the default");
+        singleSite(disabledI18n(Locale.GERMAN));
+        assertEquals(List.of(), variantStructure.getSupportedVariantLocales(promo), "i18n off");
     }
 
     @Test
