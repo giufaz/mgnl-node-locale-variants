@@ -1,0 +1,20 @@
+# "Add language variants": opened by the browser action addLocaleVariant on the selected item
+label: node-locale-variants.dialog.label
+form:
+  properties:
+    locales:
+      class: com.giufaz.magnolia.localevariants.app.create.LocaleVariantLocalesFieldDefinition
+      label: node-locale-variants.dialog.locales.label
+actions:
+  commit:
+    label: node-locale-variants.dialog.create
+    class: com.giufaz.magnolia.localevariants.app.create.CreateLocaleVariantsActionDefinition
+  cancel:
+    label: node-locale-variants.dialog.cancel
+    class: info.magnolia.ui.contentapp.action.CloseActionDefinition
+footerLayout:
+  $type: defaultEditorActionLayout
+  primaryActions:
+    commit: commit
+  secondaryActions:
+    cancel: cancel

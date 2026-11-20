@@ -25,6 +25,16 @@
       <implementation>com.giufaz.magnolia.localevariants.delivery.JcrReferenceResolverDetector</implementation>
       <scope>singleton</scope>
     </component>
+    <component>
+      <type>com.giufaz.magnolia.localevariants.app.activation.AppActivation</type>
+      <implementation>com.giufaz.magnolia.localevariants.app.activation.AppActivation</implementation>
+      <scope>singleton</scope>
+    </component>
+    <!-- Decorates the apps enabled in the module config (apps) -->
+    <component>
+      <type>info.magnolia.ui.api.app.registry.AppDescriptorRegistry</type>
+      <implementation>com.giufaz.magnolia.localevariants.app.activation.LocaleVariantsAppDescriptorRegistry</implementation>
+    </component>
   </components>
 
   <dependencies>
@@ -37,6 +47,10 @@
     </dependency>
     <dependency>
       <name>magnolia-rest-jcr-delivery</name>
+    </dependency>
+    <!-- After ui-framework-jcr, which binds the app registry to its configuration source -->
+    <dependency>
+      <name>ui-framework-jcr</name>
     </dependency>
     <!-- Page variants get their missing areas only if Pages REST exists at runtime,
          which should be the default case -->

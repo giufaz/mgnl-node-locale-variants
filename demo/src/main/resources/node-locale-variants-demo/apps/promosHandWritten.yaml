@@ -1,0 +1,58 @@
+# Hand-written app on the promos workspace. Unlike the generated content-types app "promos" (every named item as a
+# map), its action bar sections, groups and items are lists (- name:), the other shape Magnolia accepts for list
+# properties. subApps and actions must stay maps: Map2Bean leaves a map property null when given a list.
+class: info.magnolia.ui.contentapp.configuration.ContentAppDescriptor
+appClass: info.magnolia.ui.framework.app.BaseApp
+label: Promos, hand-written (locale variants demo)
+icon: icon-app
+datasource:
+  $type: jcrDatasource
+  workspace: promos
+  allowedNodeTypes:
+    - mgnl:folder
+    - lvd:promo
+subApps:
+  browser:
+    class: info.magnolia.ui.contentapp.configuration.BrowserDescriptor
+    label: Promos
+    actions:
+      rename:
+        label: Rename promo
+        icon: icon-edit
+        $type: openDialogAction
+        dialogId: ui-framework-jcr:rename
+        availability:
+          writePermissionRequired: true
+          nodeTypes: [lvd:promo]
+      export:
+        label: Export promo
+        icon: icon-export
+        $type: exportAction
+        format: YAML
+        availability:
+          nodeTypes: [lvd:promo]
+    actionbar:
+      sections:
+        - name: item
+          availability:
+            nodeTypes: [lvd:promo]
+          groups:
+            - name: editActions
+              items:
+                - name: rename
+            - name: importExportActions
+              items:
+                - name: export
+    workbench:
+      contentViews:
+        - name: tree
+          $type: treeView
+          columns:
+            - name: jcrName
+              $type: jcrTitleColumn
+              expandRatio: 2
+            - name: jcrPublishingStatus
+              $type: statusColumn
+permissions:
+  roles:
+    superuser: superuser

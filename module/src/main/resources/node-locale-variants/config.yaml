@@ -1,0 +1,11 @@
+# Module config of node-locale-variants. Projects change it with a light-module decoration:
+#   <your-module>/decorations/node-locale-variants/config.yaml
+#
+# apps: the content apps with locale variants (app name → settings).
+#   enabled (optional, default true): false = the app is left as it is.
+#   nodeTypes (required, at least one): the item types that can have variants; an app without it is left as it is.
+# Example:
+#   apps:
+#     promos:
+#       nodeTypes: [my:promo]
+apps: {}
