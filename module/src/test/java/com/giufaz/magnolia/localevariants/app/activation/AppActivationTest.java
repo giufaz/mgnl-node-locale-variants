@@ -24,6 +24,10 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 
+import com.giufaz.magnolia.localevariants.config.ActionDefaults;
+import com.giufaz.magnolia.localevariants.config.LocaleVariantsAppConfig;
+import com.giufaz.magnolia.localevariants.config.ResolvedLocaleVariantsAppConfig;
+
 class AppActivationTest {
 
     private final LocaleVariantsAppDescriptorRegistry registry = mock(LocaleVariantsAppDescriptorRegistry.class);
@@ -65,18 +69,53 @@ class AppActivationTest {
     // Events only for the added, removed and changed apps
     @Test
     void test_applyNow_changedApps() {
-        Map<String, LocaleVariantsAppConfig> before = apps("promos", "lvd:promo");
+        Map<String, ResolvedLocaleVariantsAppConfig> before = apps("promos", "lvd:promo");
         before.putAll(apps("ctas", "lvd:cta"));
         before.putAll(apps("news", "lvd:news"));
         activation.applyNow(before);
         clearInvocations(registry, systemEventBus);
 
-        Map<String, LocaleVariantsAppConfig> after = apps("promos", "lvd:promo"); // unchanged
+        Map<String, ResolvedLocaleVariantsAppConfig> after = apps("promos", "lvd:promo"); // unchanged
         after.putAll(apps("ctas", "lvd:cta", "lvd:ctaLink")); // changed
         after.putAll(apps("events", "lvd:event")); // added; news removed
         activation.applyNow(after);
 
         assertEquals(Set.of("ctas", "news", "events"), reregisteredApps());
+    }
+
+    // A change of the action lists alone is a change of the app
+    @Test
+    void test_applyNow_changedActionLists() {
+        activation.applyNow(apps("promos", "lvd:promo"));
+        clearInvocations(registry, systemEventBus);
+
+        activation.applyNow(Map.of("promos", new ResolvedLocaleVariantsAppConfig("promos", List.of("lvd:promo"),
+                List.of("editItem", "export"), List.of("activate"))));
+
+        verify(registry).setAppsDecorator(notNull());
+        assertEquals(Set.of("promos"), reregisteredApps());
+    }
+
+    // What the availability rules read: the apps applied last
+    @Test
+    void test_getAppliedApp() {
+        assertNull(activation.getAppliedApp("promos"), "nothing applied yet");
+
+        Map<String, ResolvedLocaleVariantsAppConfig> apps = apps("promos", "lvd:promo");
+        activation.applyNow(apps);
+        assertEquals(apps.get("promos"), activation.getAppliedApp("promos"));
+        assertNull(activation.getAppliedApp("ctas"), "not in the module config");
+
+        activation.applyNow(Map.of());
+        assertNull(activation.getAppliedApp("promos"), "removed from the module config");
+    }
+
+    // Scheduled but not applied yet: the rules still read the previous config
+    @Test
+    void test_getAppliedApp_beforeTheDebounce() {
+        activation.apply(Map.of("promos", app(true, "lvd:promo")), new ActionDefaults());
+
+        assertNull(activation.getAppliedApp("promos"));
     }
 
     @Test
@@ -106,17 +145,79 @@ class AppActivationTest {
 
         assertDoesNotThrow(() -> foreignActivation.applyNow(apps("promos", "lvd:promo")));
         verifyNoInteractions(systemEventBus);
+        assertNull(foreignActivation.getAppliedApp("promos"), "not applied: the rules allow nothing");
     }
 
     // Debounced: of two calls in a row, only the last one is applied
     @Test
     void test_apply_debounced() {
-        activation.apply(apps("promos", "lvd:promo"));
-        activation.apply(apps("ctas", "lvd:cta"));
+        activation.apply(Map.of("promos", app(true, "lvd:promo")), new ActionDefaults());
+        activation.apply(Map.of("ctas", app(true, "lvd:cta")), new ActionDefaults());
 
         verify(registry, timeout(3000)).setAppsDecorator(notNull());
         verify(systemEventBus, after(1500).times(1)).fireEvent(any(AppRegistryEvent.class));
         assertEquals(Set.of("ctas"), reregisteredApps());
+    }
+
+    // The config is checked and resolved after the debounce: the first call, with
+    // a partially decorated config (no node types yet), is never looked at
+    @Test
+    void test_apply_checksOnlyTheLastConfig() {
+        LocaleVariantsAppConfig partial = app(true);
+        partial.setContainerActions(List.of("export"));
+        LocaleVariantsAppConfig complete = app(true, "lvd:promo");
+        complete.setContainerActions(List.of("export"));
+        ActionDefaults defaults = new ActionDefaults();
+        defaults.setVariantActions(List.of("editItem"));
+
+        activation.apply(Map.of("promos", partial), defaults);
+        activation.apply(Map.of("promos", complete), defaults);
+
+        verify(registry, timeout(3000)).setAppsDecorator(notNull());
+        verify(registry, after(1500).times(1)).setAppsDecorator(any());
+        assertEquals(new ResolvedLocaleVariantsAppConfig("promos", List.of("lvd:promo"), List.of("editItem"),
+                List.of("export")), activation.getAppliedApp("promos"));
+    }
+
+    // Only the eligible apps are decorated: enabled, with node types
+    @Test
+    void test_resolveEligibleApps() {
+        Map<String, LocaleVariantsAppConfig> apps = new LinkedHashMap<>();
+        apps.put("promos", app(true, "lvd:promo"));
+        apps.put("pages-app", app(false, "mgnl:page")); // disabled
+        apps.put("ctas", app(true)); // no node types
+        apps.put("empty", null); // "empty:" in YAML
+
+        assertEquals(List.of("promos"),
+                List.copyOf(AppActivation.resolveEligibleApps(apps, new ActionDefaults()).keySet()));
+    }
+
+    @Test
+    void test_resolveEligibleApps_noApps() {
+        assertEquals(Map.of(), AppActivation.resolveEligibleApps(new LinkedHashMap<>(), new ActionDefaults()));
+    }
+
+    // Their action lists with the module config defaults
+    @Test
+    void test_resolveEligibleApps_resolvesActionLists() {
+        LocaleVariantsAppConfig promos = app(true, "lvd:promo");
+        promos.setVariantActions(List.of("editPromo"));
+        LocaleVariantsAppConfig ctas = app(true, "lvd:cta");
+        ctas.setContainerActions(List.of("exportCta"));
+        ctas.setReplaceDefaultContainerActions(true);
+        Map<String, LocaleVariantsAppConfig> apps = new LinkedHashMap<>();
+        apps.put("promos", promos);
+        apps.put("ctas", ctas);
+        ActionDefaults defaults = new ActionDefaults();
+        defaults.setVariantActions(List.of("editItem"));
+        defaults.setContainerActions(List.of("activate"));
+
+        Map<String, ResolvedLocaleVariantsAppConfig> resolved = AppActivation.resolveEligibleApps(apps, defaults);
+
+        assertEquals(new ResolvedLocaleVariantsAppConfig("promos", List.of("lvd:promo"), List.of("editItem", "editPromo"),
+                List.of("activate")), resolved.get("promos"));
+        assertEquals(new ResolvedLocaleVariantsAppConfig("ctas", List.of("lvd:cta"), List.of("editItem"),
+                List.of("exportCta")), resolved.get("ctas"));
     }
 
     private Set<String> reregisteredApps() {
@@ -127,11 +228,17 @@ class AppActivationTest {
                 .collect(Collectors.toSet());
     }
 
-    private static Map<String, LocaleVariantsAppConfig> apps(String name, String... nodeTypes) {
-        LocaleVariantsAppConfig config = new LocaleVariantsAppConfig();
-        config.setNodeTypes(List.of(nodeTypes));
-        Map<String, LocaleVariantsAppConfig> apps = new LinkedHashMap<>();
-        apps.put(name, config);
+    // Mutable, with the same action lists for every app
+    private static Map<String, ResolvedLocaleVariantsAppConfig> apps(String name, String... nodeTypes) {
+        Map<String, ResolvedLocaleVariantsAppConfig> apps = new LinkedHashMap<>();
+        apps.put(name, new ResolvedLocaleVariantsAppConfig(name, List.of(nodeTypes), List.of("editItem"), List.of("activate")));
         return apps;
+    }
+
+    private static LocaleVariantsAppConfig app(boolean enabled, String... nodeTypes) {
+        LocaleVariantsAppConfig app = new LocaleVariantsAppConfig();
+        app.setEnabled(enabled);
+        app.setNodeTypes(List.of(nodeTypes));
+        return app;
     }
 }

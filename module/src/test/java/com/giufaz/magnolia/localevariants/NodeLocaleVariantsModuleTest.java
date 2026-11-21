@@ -9,10 +9,10 @@ import java.util.Map;
 import java.util.Optional;
 
 import org.junit.jupiter.api.Test;
-import org.mockito.ArgumentCaptor;
 
 import com.giufaz.magnolia.localevariants.app.activation.AppActivation;
-import com.giufaz.magnolia.localevariants.app.activation.LocaleVariantsAppConfig;
+import com.giufaz.magnolia.localevariants.config.ActionDefaults;
+import com.giufaz.magnolia.localevariants.config.LocaleVariantsAppConfig;
 import com.giufaz.magnolia.localevariants.delivery.JcrReferenceResolverDetector;
 
 class NodeLocaleVariantsModuleTest {
@@ -37,47 +37,32 @@ class NodeLocaleVariantsModuleTest {
         assertDoesNotThrow(() -> new NodeLocaleVariantsModule(broken, mock(AppActivation.class)).start(null));
     }
 
-    // Only the eligible apps reach the activation: enabled, with node types
+    // The config goes to the activation as it is: it is checked there, after the
+    // debounce
     @Test
-    void test_start_eligibleApps() {
+    void test_start_passesTheConfigToTheActivation() {
+        AppActivation appActivation = mock(AppActivation.class);
+        NodeLocaleVariantsModule module = new NodeLocaleVariantsModule(new JcrReferenceResolverDetector(), appActivation);
         Map<String, LocaleVariantsAppConfig> apps = new LinkedHashMap<>();
-        apps.put("promos", app(true, "lvd:promo"));
-        apps.put("pages-app", app(false, "mgnl:page")); // disabled
-        apps.put("ctas", app(true)); // no node types
-        apps.put("empty", null); // "empty:" in YAML
+        apps.put("promos", new LocaleVariantsAppConfig());
+        ActionDefaults defaults = new ActionDefaults();
+        module.setApps(apps);
+        module.setDefaults(defaults);
 
-        assertEquals(List.of("promos"), List.copyOf(appliedApps(apps).keySet()));
+        module.start(null);
+
+        verify(appActivation).apply(same(apps), same(defaults));
     }
 
+    // "apps:" and "defaults:" with no value in YAML
     @Test
-    void test_start_noApps() {
-        assertEquals(Map.of(), appliedApps(new LinkedHashMap<>()));
-    }
-
-    @Test
-    void test_setApps_null() {
+    void test_setters_null() {
         NodeLocaleVariantsModule module = new NodeLocaleVariantsModule(new JcrReferenceResolverDetector(),
                 mock(AppActivation.class));
         module.setApps(null);
+        module.setDefaults(null);
         assertEquals(Map.of(), module.getApps());
-    }
-
-    // Starts a module configured with apps and returns what it passes to the activation
-    @SuppressWarnings("unchecked")
-    private static Map<String, LocaleVariantsAppConfig> appliedApps(Map<String, LocaleVariantsAppConfig> apps) {
-        AppActivation appActivation = mock(AppActivation.class);
-        NodeLocaleVariantsModule module = new NodeLocaleVariantsModule(new JcrReferenceResolverDetector(), appActivation);
-        module.setApps(apps);
-        module.start(null);
-        ArgumentCaptor<Map<String, LocaleVariantsAppConfig>> applied = ArgumentCaptor.forClass(Map.class);
-        verify(appActivation).apply(applied.capture());
-        return applied.getValue();
-    }
-
-    private static LocaleVariantsAppConfig app(boolean enabled, String... nodeTypes) {
-        LocaleVariantsAppConfig app = new LocaleVariantsAppConfig();
-        app.setEnabled(enabled);
-        app.setNodeTypes(List.of(nodeTypes));
-        return app;
+        assertEquals(List.of(), module.getDefaults().getVariantActions());
+        assertEquals(List.of(), module.getDefaults().getContainerActions());
     }
 }

@@ -4,3 +4,11 @@
 // Demo item: extends mgnl:content, so it is published and versioned on its own and can have locale variants
 [lvd:promo] > mgnl:content
   orderable
+
+// Hand-written multi-type app "ctas": one detail sub-app and one edit action per type
+[lvd:ctaSocial] > mgnl:content
+  orderable
+[lvd:ctaContact] > mgnl:content
+  orderable
+[lvd:ctaLink] > mgnl:content
+  orderable

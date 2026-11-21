@@ -1,0 +1,369 @@
+# Hand-written multi-type app: three CTA node types, one detail sub-app and one edit action per type, its own workspace.
+# Action bar sections are lists (- name:), unlike the generated content-types apps (maps); subApps and actions are maps.
+class: info.magnolia.ui.contentapp.configuration.ContentAppDescriptor
+appClass: info.magnolia.ui.framework.app.BaseApp
+label: CTAs (locale variants demo)
+icon: icon-app
+datasource:
+  $type: jcrDatasource
+  workspace: ctas
+  rootPath: /
+  nodeNameProperty: name
+  allowedNodeTypes:
+    - mgnl:folder
+    - lvd:ctaSocial
+    - lvd:ctaContact
+    - lvd:ctaLink
+subApps:
+  browser:
+    class: info.magnolia.ui.contentapp.configuration.BrowserDescriptor
+    label: CTAs
+    actions:
+      addFolder:
+        icon: icon-add-folder
+        $type: addNodeAction
+        nodeType: mgnl:folder
+        availability:
+          root: true
+          writePermissionRequired: true
+          nodeTypes: [mgnl:folder]
+      editFolder:
+        icon: icon-edit
+        $type: openDialogAction
+        dialogId: ui-framework-jcr:rename
+        availability:
+          writePermissionRequired: true
+          nodeTypes: [mgnl:folder]
+      addSocial:
+        label: Add social cta
+        icon: icon-add-item
+        $type: openDetailSubappAction
+        appName: ctas
+        subAppName: socialDetail
+        viewType: add
+        availability:
+          root: true
+          writePermissionRequired: true
+          nodeTypes: [mgnl:folder]
+      editSocial:
+        label: Edit social cta
+        icon: icon-edit
+        $type: openDetailSubappAction
+        appName: ctas
+        subAppName: socialDetail
+        viewType: edit
+        availability:
+          writePermissionRequired: true
+          nodeTypes: [lvd:ctaSocial]
+      addContact:
+        label: Add contact cta
+        icon: icon-add-item
+        $type: openDetailSubappAction
+        appName: ctas
+        subAppName: contactDetail
+        viewType: add
+        availability:
+          root: true
+          writePermissionRequired: true
+          nodeTypes: [mgnl:folder]
+      editContact:
+        label: Edit contact cta
+        icon: icon-edit
+        $type: openDetailSubappAction
+        appName: ctas
+        subAppName: contactDetail
+        viewType: edit
+        availability:
+          writePermissionRequired: true
+          nodeTypes: [lvd:ctaContact]
+      addLink:
+        label: Add link cta
+        icon: icon-add-item
+        $type: openDetailSubappAction
+        appName: ctas
+        subAppName: linkDetail
+        viewType: add
+        availability:
+          root: true
+          writePermissionRequired: true
+          nodeTypes: [mgnl:folder]
+      editLink:
+        label: Edit link cta
+        icon: icon-edit
+        $type: openDetailSubappAction
+        appName: ctas
+        subAppName: linkDetail
+        viewType: edit
+        availability:
+          writePermissionRequired: true
+          nodeTypes: [lvd:ctaLink]
+      rename:
+        icon: icon-edit
+        $type: openDialogAction
+        dialogId: ui-framework-jcr:rename
+        availability:
+          writePermissionRequired: true
+      duplicate:
+        icon: icon-duplicate
+        $type: duplicateNodeAction
+        availability:
+          writePermissionRequired: true
+      move:
+        icon: icon-move
+        $type: moveAction
+        availability:
+          writePermissionRequired: true
+          multiple: true
+      confirmMarkDeletion:
+        icon: icon-trash
+        $type: deleteNodesConfirmationAction
+        successActionName: markDeleted
+        availability:
+          writePermissionRequired: true
+          multiple: true
+      markDeleted:
+        $type: markAsDeletedAction
+        command: markAsDeleted
+        datasourceRefreshBehavior: items
+        availability:
+          writePermissionRequired: true
+      activate:
+        icon: icon-publish
+        $type: jcrCommandAction
+        catalog: versioned
+        command: publish
+        datasourceRefreshBehavior: items
+        availability:
+          writePermissionRequired: true
+          rules:
+            - name: isPublishable
+              $type: jcrPublishableRule
+      deactivate:
+        icon: icon-unpublish
+        $type: jcrCommandAction
+        command: unpublish
+        availability:
+          writePermissionRequired: true
+          rules:
+            - name: IsPublishedRule
+              $type: jcrPublishedRule
+      export:
+        icon: icon-export
+        $type: exportAction
+        format: YAML
+      showVersions:
+        icon: icon-show-versions
+        $type: openDialogAction
+        dialogId: ui-framework-jcr:versions
+        availability:
+          rules:
+            - name: hasVersions
+              $type: jcrHasVersionsRule
+    actionbar:
+      defaultAction: editLink
+      sections:
+        - name: social
+          availability:
+            nodeTypes: [lvd:ctaSocial]
+          groups:
+            - name: addActions
+              items:
+                - name: confirmMarkDeletion
+            - name: editActions
+              items:
+                - name: editSocial
+                - name: rename
+                - name: duplicate
+                - name: move
+            - name: activationActions
+              items:
+                - name: activate
+                - name: deactivate
+            - name: importExportActions
+              items:
+                - name: export
+                - name: showVersions
+        - name: contact
+          availability:
+            nodeTypes: [lvd:ctaContact]
+          groups:
+            - name: addActions
+              items:
+                - name: confirmMarkDeletion
+            - name: editActions
+              items:
+                - name: editContact
+                - name: rename
+                - name: duplicate
+                - name: move
+            - name: activationActions
+              items:
+                - name: activate
+                - name: deactivate
+            - name: importExportActions
+              items:
+                - name: export
+                - name: showVersions
+        - name: link
+          availability:
+            nodeTypes: [lvd:ctaLink]
+          groups:
+            - name: addActions
+              items:
+                - name: confirmMarkDeletion
+            - name: editActions
+              items:
+                - name: editLink
+                - name: rename
+                - name: duplicate
+                - name: move
+            - name: activationActions
+              items:
+                - name: activate
+                - name: deactivate
+            - name: importExportActions
+              items:
+                - name: export
+                - name: showVersions
+        - name: folder
+          availability:
+            nodeTypes: [mgnl:folder]
+          groups:
+            - name: addActions
+              items:
+                - name: addSocial
+                - name: addContact
+                - name: addLink
+                - name: addFolder
+            - name: editActions
+              items:
+                - name: editFolder
+                - name: move
+            - name: activationActions
+              items:
+                - name: activate
+                - name: deactivate
+        - name: root
+          availability:
+            root: true
+          groups:
+            - name: addActions
+              items:
+                - name: addSocial
+                - name: addContact
+                - name: addLink
+                - name: addFolder
+    workbench:
+      contentViews:
+        - name: tree
+          $type: treeView
+          multiSelect: true
+          columns:
+            - name: name
+              $type: componentColumn
+              expandRatio: 2
+            - name: jcrPublishingStatus
+              $type: statusColumn
+            - name: mgnl:lastModified
+              $type: dateColumn
+              width: 190
+  socialDetail:
+    class: info.magnolia.ui.contentapp.detail.DetailDescriptor
+    label: Social CTA
+    itemProvider:
+      $type: jcrNodeFromLocationProvider
+      workspace: ctas
+      nodeType: lvd:ctaSocial
+    actions:
+      commit:
+        $type: commitAction
+      cancel:
+        $type: closeAction
+    form:
+      properties:
+        name:
+          $type: textField
+          label: Name
+          required: true
+        label:
+          $type: textField
+          label: Label
+          i18n: true
+        network:
+          $type: textField
+          label: Network (e.g. linkedin)
+        trackingId:
+          $type: textField
+          label: Tracking id
+    footerLayout:
+      $type: defaultEditorActionLayout
+      primaryActions:
+        commit: commit
+  contactDetail:
+    # The forms piece makes this one a Vaadin form (React is used only for exactly DetailDescriptor)
+    class: info.magnolia.ui.contentapp.detail.DetailDescriptor
+    label: Contact CTA
+    itemProvider:
+      $type: jcrNodeFromLocationProvider
+      workspace: ctas
+      nodeType: lvd:ctaContact
+    actions:
+      commit:
+        $type: commitAction
+      cancel:
+        $type: closeAction
+    form:
+      properties:
+        name:
+          $type: textField
+          label: Name
+          required: true
+        label:
+          $type: textField
+          label: Label
+          i18n: true
+        phone:
+          $type: textField
+          label: Phone or email
+        trackingId:
+          $type: textField
+          label: Tracking id
+    footerLayout:
+      $type: defaultEditorActionLayout
+      primaryActions:
+        commit: commit
+  linkDetail:
+    class: info.magnolia.ui.contentapp.detail.DetailDescriptor
+    label: Link CTA
+    itemProvider:
+      $type: jcrNodeFromLocationProvider
+      workspace: ctas
+      nodeType: lvd:ctaLink
+    actions:
+      commit:
+        $type: commitAction
+      cancel:
+        $type: closeAction
+    form:
+      properties:
+        name:
+          $type: textField
+          label: Name
+          required: true
+        label:
+          $type: textField
+          label: Label
+          i18n: true
+        url:
+          $type: textField
+          label: URL
+        trackingId:
+          $type: textField
+          label: Tracking id
+    footerLayout:
+      $type: defaultEditorActionLayout
+      primaryActions:
+        commit: commit
+permissions:
+  roles:
+    superuser: superuser

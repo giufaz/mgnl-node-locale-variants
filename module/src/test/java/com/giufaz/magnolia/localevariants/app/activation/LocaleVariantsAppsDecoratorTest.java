@@ -15,6 +15,8 @@ import java.util.Map;
 
 import org.junit.jupiter.api.Test;
 
+import com.giufaz.magnolia.localevariants.config.ResolvedLocaleVariantsAppConfig;
+
 class LocaleVariantsAppsDecoratorTest {
 
     private final AppDefinitionTransformer transformer = mock(AppDefinitionTransformer.class);
@@ -67,9 +69,7 @@ class LocaleVariantsAppsDecoratorTest {
         return provider;
     }
 
-    private static LocaleVariantsAppConfig config(String... nodeTypes) {
-        LocaleVariantsAppConfig config = new LocaleVariantsAppConfig();
-        config.setNodeTypes(List.of(nodeTypes));
-        return config;
+    private static ResolvedLocaleVariantsAppConfig config(String... nodeTypes) {
+        return new ResolvedLocaleVariantsAppConfig("promos", List.of(nodeTypes), List.of("editItem"), List.of("activate"));
     }
 }

@@ -1,7 +1,0 @@
-# Demo: locale variants in the content-types app "promos" (named items as maps) and in the hand-written app
-# "promosHandWritten" (named items as lists), both on the promos workspace
-apps:
-  promos:
-    nodeTypes: [lvd:promo]
-  promosHandWritten:
-    nodeTypes: [lvd:promo]

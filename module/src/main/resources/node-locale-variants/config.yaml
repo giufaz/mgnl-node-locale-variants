@@ -1,11 +1,12 @@
-# Module config of node-locale-variants. Projects change it with a light-module decoration:
-#   <your-module>/decorations/node-locale-variants/config.yaml
-#
-# apps: the content apps with locale variants (app name → settings).
-#   enabled (optional, default true): false = the app is left as it is.
-#   nodeTypes (required, at least one): the item types that can have variants; an app without it is left as it is.
-# Example:
-#   apps:
-#     promos:
-#       nodeTypes: [my:promo]
+# Change it with a decoration: <your-module>/decorations/node-locale-variants/config.yaml
+
+# Browser actions allowed on variants and containers (copy, move, duplicate, rename, paste are never allowed)
+defaults:
+  variantActions: [editItem, confirmMarkDeletion, markDeleted, activate, deactivate, export, showVersions, restoreVersion,
+                   restorePreviousVersion, deletePermanently, activateDeleted]
+  containerActions: [activate, deactivate, export, confirmMarkDeletion, markDeleted, activateDeleted, deletePermanently,
+                     restorePreviousVersion]
+
+# Per app: nodeTypes (required), enabled, variantActions / containerActions (added to the defaults),
+# replaceDefaultVariantActions / replaceDefaultContainerActions (true = only the app's lists)
 apps: {}

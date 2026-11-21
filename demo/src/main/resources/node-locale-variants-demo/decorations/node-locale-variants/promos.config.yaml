@@ -1,0 +1,4 @@
+# Demo: locale variants in the content-types app "promos", with the default action lists
+apps:
+  promos:
+    nodeTypes: [lvd:promo]

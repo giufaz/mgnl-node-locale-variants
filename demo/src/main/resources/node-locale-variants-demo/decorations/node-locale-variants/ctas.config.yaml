@@ -1,0 +1,8 @@
+# Demo: locale variants in the hand-written multi-type app "ctas", with its own action lists.
+# lvd:ctaContact is left out on purpose: its items stay as Magnolia ships them.
+apps:
+  ctas:
+    nodeTypes: [lvd:ctaSocial, lvd:ctaLink]
+    variantActions: [editSocial, editLink]       # added to defaults.variantActions
+    containerActions: []
+    replaceDefaultContainerActions: true         # no action on this app's containers

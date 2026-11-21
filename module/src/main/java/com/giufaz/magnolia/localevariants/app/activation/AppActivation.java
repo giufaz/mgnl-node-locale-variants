@@ -21,6 +21,10 @@ import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.giufaz.magnolia.localevariants.config.ActionDefaults;
+import com.giufaz.magnolia.localevariants.config.LocaleVariantsAppConfig;
+import com.giufaz.magnolia.localevariants.config.ResolvedLocaleVariantsAppConfig;
+
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
 
@@ -31,8 +35,9 @@ import jakarta.inject.Named;
  *
  * <p>
  * Debounced: Magnolia restarts the module more than once per config change,
- * the first time with a partially decorated config, so only the last call is
- * applied. The apps are decorated again only when their config changes.
+ * the first times with a partially decorated config, so only the last call is
+ * checked and applied. The apps are decorated again only when their config
+ * changes.
  */
 public class AppActivation {
 
@@ -48,8 +53,10 @@ public class AppActivation {
         return thread;
     });
     private ScheduledFuture<?> pending;
-    // The app configs applied last, by app name
-    private Map<String, LocaleVariantsAppConfig> applied = Map.of();
+    // The app configs applied last, by app name. Volatile: written by the
+    // debounce thread (applyNow), read by the UI request threads (action bar
+    // availability)
+    private volatile Map<String, ResolvedLocaleVariantsAppConfig> applied = Map.of();
 
     @Inject
     public AppActivation(AppDescriptorRegistry registry, Map2BeanTransformer map2Bean,
@@ -59,23 +66,50 @@ public class AppActivation {
         this.systemEventBus = systemEventBus;
     }
 
-    public synchronized void apply(Map<String, LocaleVariantsAppConfig> apps) {
+    public synchronized void apply(Map<String, LocaleVariantsAppConfig> configuredApps, ActionDefaults defaults) {
         // Debounce: cancel the update scheduled by the previous call, if it hasn't run
         // yet
         if (pending != null) {
             pending.cancel(false);
         }
-        Map<String, LocaleVariantsAppConfig> snapshot = new LinkedHashMap<>(apps);
+        Map<String, LocaleVariantsAppConfig> snapshot = new LinkedHashMap<>(configuredApps);
         pending = executor.schedule(() -> {
             try {
-                applyNow(snapshot);
+                // Discard apps disabled or invalidly configured
+                var onlyValidAndEligibleApps = resolveEligibleApps(snapshot, defaults);
+                // Apply the decorations to eligible apps
+                applyNow(onlyValidAndEligibleApps);
             } catch (RuntimeException e) {
                 log.error("[node-locale-variants] Can't apply locale variants to the apps", e);
             }
         }, DEBOUNCE_MS, TimeUnit.MILLISECONDS);
     }
 
-    synchronized void applyNow(Map<String, LocaleVariantsAppConfig> apps) {
+    // The apps to decorate, with their action lists resolved with the defaults
+    static Map<String, ResolvedLocaleVariantsAppConfig> resolveEligibleApps(
+            Map<String, LocaleVariantsAppConfig> configuredApps, ActionDefaults defaults) {
+        Map<String, ResolvedLocaleVariantsAppConfig> eligible = new LinkedHashMap<>();
+        configuredApps.forEach((name, app) -> {
+            if (isEligibleForLocaleVariants(name, app)) {
+                eligible.put(name, ResolvedLocaleVariantsAppConfig.of(name, app, defaults));
+            }
+        });
+        return eligible;
+    }
+
+    private static boolean isEligibleForLocaleVariants(String name, LocaleVariantsAppConfig app) {
+        if (app != null && !app.isEnabled()) {
+            log.debug("[node-locale-variants] App {} disabled (apps.{}.enabled: false)", name, name);
+            return false;
+        }
+        if (app == null || app.getNodeTypes().isEmpty()) {
+            log.warn("[node-locale-variants] App {} not decorated: apps.{}.nodeTypes is required", name, name);
+            return false;
+        }
+        return true;
+    }
+
+    synchronized void applyNow(Map<String, ResolvedLocaleVariantsAppConfig> apps) {
         if (!(registry instanceof LocaleVariantsAppDescriptorRegistry ownRegistry)) {
             // Another module mapped its own AppDescriptorRegistry over ours
             log.error("[node-locale-variants] Apps not decorated: the AppDescriptorRegistry is {}, not {}",
@@ -91,7 +125,7 @@ public class AppActivation {
 
         // Update currently applied config and send an event to Admincentral apps about
         // the change
-        Map<String, LocaleVariantsAppConfig> previous = applied;
+        Map<String, ResolvedLocaleVariantsAppConfig> previous = applied;
         applied = Map.copyOf(apps);
         Set<String> names = new HashSet<>(previous.keySet());
         names.addAll(apps.keySet());
@@ -99,6 +133,11 @@ public class AppActivation {
                 .filter(name -> !Objects.equals(previous.get(name), apps.get(name)))
                 .forEach(this::fireReregistered);
         log.info("[node-locale-variants] Locale variants on apps {}", apps);
+    }
+
+    // An app with locale variants as its decorated definition was built, or null
+    public ResolvedLocaleVariantsAppConfig getAppliedApp(String appName) {
+        return applied.get(appName);
     }
 
     // Running AdminCentral sessions pick up the changed app definition

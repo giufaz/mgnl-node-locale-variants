@@ -13,7 +13,8 @@ import org.slf4j.LoggerFactory;
 import org.slf4j.helpers.MessageFormatter;
 
 import com.giufaz.magnolia.localevariants.app.activation.AppActivation;
-import com.giufaz.magnolia.localevariants.app.activation.LocaleVariantsAppConfig;
+import com.giufaz.magnolia.localevariants.config.ActionDefaults;
+import com.giufaz.magnolia.localevariants.config.LocaleVariantsAppConfig;
 import com.giufaz.magnolia.localevariants.delivery.JcrReferenceResolverDetector;
 
 import jakarta.inject.Inject;
@@ -34,6 +35,7 @@ public class NodeLocaleVariantsModule implements ModuleLifecycle {
     private final AppActivation appActivation;
 
     private Map<String, LocaleVariantsAppConfig> configuredApps = new LinkedHashMap<>();
+    private ActionDefaults defaults = new ActionDefaults();
 
     @Inject
     public NodeLocaleVariantsModule(JcrReferenceResolverDetector detector, AppActivation appActivation) {
@@ -47,29 +49,7 @@ public class NodeLocaleVariantsModule implements ModuleLifecycle {
         // Early warning if a Magnolia changes the internals the reference
         // localization relies on
         detector.checkMagnoliaInternals().ifPresent(problem -> log.error(referencesDisabledMessage(problem)));
-        appActivation.apply(getAppsEligibleForLocaleVariants());
-    }
-
-    private Map<String, LocaleVariantsAppConfig> getAppsEligibleForLocaleVariants() {
-        Map<String, LocaleVariantsAppConfig> eligible = new LinkedHashMap<>();
-        configuredApps.forEach((name, app) -> {
-            if (isEligibleForLocaleVariants(name, app)) {
-                eligible.put(name, app);
-            }
-        });
-        return eligible;
-    }
-
-    private boolean isEligibleForLocaleVariants(String name, LocaleVariantsAppConfig app) {
-        if (app != null && !app.isEnabled()) {
-            log.debug("[node-locale-variants] App {} disabled (apps.{}.enabled: false)", name, name);
-            return false;
-        }
-        if (app == null || app.getNodeTypes().isEmpty()) {
-            log.warn("[node-locale-variants] App {} not decorated: apps.{}.nodeTypes is required", name, name);
-            return false;
-        }
-        return true;
+        appActivation.apply(configuredApps, defaults);
     }
 
     // Bean property "apps": the key of the module config (config.yaml)
@@ -79,6 +59,14 @@ public class NodeLocaleVariantsModule implements ModuleLifecycle {
 
     public void setApps(Map<String, LocaleVariantsAppConfig> apps) {
         this.configuredApps = apps == null ? new LinkedHashMap<>() : apps;
+    }
+
+    public ActionDefaults getDefaults() {
+        return defaults;
+    }
+
+    public void setDefaults(ActionDefaults defaults) {
+        this.defaults = defaults == null ? new ActionDefaults() : defaults;
     }
 
     static String referencesDisabledMessage(String problem) {

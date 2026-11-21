@@ -20,6 +20,8 @@ import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.giufaz.magnolia.localevariants.config.ResolvedLocaleVariantsAppConfig;
+
 /**
  * Java decorator of the apps enabled in the module config: raw definition →
  * {@link AppDefinitionTransformer} → bean, the same steps as Magnolia's YAML
@@ -33,12 +35,12 @@ class LocaleVariantsAppsDecorator implements DefinitionDecorator<AppDescriptor> 
     private static final Logger log = LoggerFactory.getLogger(LocaleVariantsAppsDecorator.class);
     private static final String MODULE = "node-locale-variants";
 
-    private final Map<String, LocaleVariantsAppConfig> apps;
+    private final Map<String, ResolvedLocaleVariantsAppConfig> apps;
     private final AppDefinitionTransformer transformer;
     private final Map2BeanTransformer map2Bean;
     private final long createdAt = System.currentTimeMillis();
 
-    LocaleVariantsAppsDecorator(Map<String, LocaleVariantsAppConfig> apps, AppDefinitionTransformer transformer,
+    LocaleVariantsAppsDecorator(Map<String, ResolvedLocaleVariantsAppConfig> apps, AppDefinitionTransformer transformer,
             Map2BeanTransformer map2Bean) {
         this.apps = Map.copyOf(apps);
         this.transformer = transformer;

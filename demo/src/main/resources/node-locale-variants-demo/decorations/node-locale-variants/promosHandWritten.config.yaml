@@ -1,0 +1,4 @@
+# Demo: locale variants in the hand-written app "promosHandWritten" (list-form sections), with the default action lists
+apps:
+  promosHandWritten:
+    nodeTypes: [lvd:promo]

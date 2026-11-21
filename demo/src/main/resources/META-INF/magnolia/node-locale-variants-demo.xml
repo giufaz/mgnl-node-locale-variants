@@ -22,6 +22,7 @@
       <name>magnolia</name>
       <workspaces>
         <workspace>promos</workspace>
+        <workspace>ctas</workspace>
       </workspaces>
       <nodeTypeFile>/mgnl-nodetypes/node-locale-variants-demo-nodetypes.cnd</nodeTypeFile>
     </repository>
