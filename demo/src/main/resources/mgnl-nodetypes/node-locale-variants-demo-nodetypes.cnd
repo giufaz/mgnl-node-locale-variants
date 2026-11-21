@@ -5,10 +5,12 @@
 [lvd:promo] > mgnl:content
   orderable
 
-// Hand-written multi-type app "ctas": one detail sub-app and one edit action per type
+// Hand-written multi-type app "ctas": one edit action per type (a detail sub-app; a dialog for the banner)
 [lvd:ctaSocial] > mgnl:content
   orderable
 [lvd:ctaContact] > mgnl:content
   orderable
 [lvd:ctaLink] > mgnl:content
+  orderable
+[lvd:ctaBanner] > mgnl:content
   orderable

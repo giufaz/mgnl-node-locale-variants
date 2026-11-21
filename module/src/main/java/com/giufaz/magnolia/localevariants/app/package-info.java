@@ -7,7 +7,9 @@
  * "Add language variant" action and its dialog;</li>
  * <li>{@link com.giufaz.magnolia.localevariants.app.guard guard}: what
  * editors can't do on variants and variants containers (availability rule,
- * drag and drop).</li>
+ * drag and drop);</li>
+ * <li>{@link com.giufaz.magnolia.localevariants.app.form form}: how a
+ * variant is edited (detail forms, dialogs, page editor).</li>
  * </ul>
  */
 package com.giufaz.magnolia.localevariants.app;

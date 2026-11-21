@@ -1,4 +1,5 @@
-# Hand-written multi-type app: three CTA node types, one detail sub-app and one edit action per type, its own workspace.
+# Hand-written multi-type app: four CTA node types, its own workspace. Three types have a detail sub-app and an edit
+# action each; the banner is edited in a dialog (openDialogAction), with no detail sub-app.
 # Action bar sections are lists (- name:), unlike the generated content-types apps (maps); subApps and actions are maps.
 class: info.magnolia.ui.contentapp.configuration.ContentAppDescriptor
 appClass: info.magnolia.ui.framework.app.BaseApp
@@ -14,6 +15,7 @@ datasource:
     - lvd:ctaSocial
     - lvd:ctaContact
     - lvd:ctaLink
+    - lvd:ctaBanner
 subApps:
   browser:
     class: info.magnolia.ui.contentapp.configuration.BrowserDescriptor
@@ -97,6 +99,14 @@ subApps:
         availability:
           writePermissionRequired: true
           nodeTypes: [lvd:ctaLink]
+      editBanner:
+        label: Edit banner cta
+        icon: icon-edit
+        $type: openDialogAction
+        dialogId: node-locale-variants-demo:ctaBanner
+        availability:
+          writePermissionRequired: true
+          nodeTypes: [lvd:ctaBanner]
       rename:
         icon: icon-edit
         $type: openDialogAction
@@ -214,6 +224,27 @@ subApps:
             - name: editActions
               items:
                 - name: editLink
+                - name: rename
+                - name: duplicate
+                - name: move
+            - name: activationActions
+              items:
+                - name: activate
+                - name: deactivate
+            - name: importExportActions
+              items:
+                - name: export
+                - name: showVersions
+        - name: banner
+          availability:
+            nodeTypes: [lvd:ctaBanner]
+          groups:
+            - name: addActions
+              items:
+                - name: confirmMarkDeletion
+            - name: editActions
+              items:
+                - name: editBanner
                 - name: rename
                 - name: duplicate
                 - name: move
@@ -357,9 +388,9 @@ subApps:
         url:
           $type: textField
           label: URL
+        # No label: found by its generated i18n key (ctas.trackingId.label, in mgnl-i18n), as many projects do
         trackingId:
           $type: textField
-          label: Tracking id
     footerLayout:
       $type: defaultEditorActionLayout
       primaryActions:

@@ -2,6 +2,7 @@ package com.giufaz.magnolia.localevariants.app.activation;
 
 import static com.giufaz.magnolia.localevariants.LocaleVariantStructure.VARIANTS_CONTAINER_TYPE;
 import static com.giufaz.magnolia.localevariants.app.activation.AppDefinitionTransformerUtils.*;
+import static com.giufaz.magnolia.localevariants.app.form.LocaleVariantAwareDetailSubApp.TWIN_SUFFIX;
 
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -10,6 +11,7 @@ import java.util.Map;
 import java.util.Set;
 
 import com.giufaz.magnolia.localevariants.app.create.AddLocaleVariantActionDefinition;
+import com.giufaz.magnolia.localevariants.app.form.LocaleVariantAwareDetailSubApp;
 import com.giufaz.magnolia.localevariants.app.guard.LocaleVariantDropConstraintDefinition;
 import com.giufaz.magnolia.localevariants.app.guard.LocaleVariantRuleDefinition;
 import com.giufaz.magnolia.localevariants.config.ResolvedLocaleVariantsAppConfig;
@@ -34,6 +36,11 @@ import com.giufaz.magnolia.localevariants.config.ResolvedLocaleVariantsAppConfig
  * them.</li>
  * </ul>
  * <p>
+ * On each detail sub-app (a sub-app with a form):
+ * {@link LocaleVariantAwareDetailSubApp} as {@code subAppClass}, and a twin
+ * sub-app {@code <subApp>_lvTwin} it opens on variants, with the node name
+ * read-only and no i18n field.
+ * <p>
  * The source map is never changed: the result is a copy.
  */
 public class AppDefinitionTransformer {
@@ -47,6 +54,9 @@ public class AppDefinitionTransformer {
     private static final String IS_DELETED_RULE_TYPE = "jcrIsDeletedRule";
     private static final String IS_DELETED_RULE_CLASS = ".JcrIsDeletedRuleDefinition";
 
+    // The form field that holds the node name when the datasource names none
+    private static final String JCR_NAME_FIELD = "jcrName";
+
     // Never on variants and containers: recognized by name, $type, class or the
     // rename dialog
     private static final Set<String> GUARDRAIL_NAMES = Set.of("duplicate", "copy", "paste", "move", "rename",
@@ -59,16 +69,27 @@ public class AppDefinitionTransformer {
     public Map<String, Object> transform(Map<String, Object> rawApp, ResolvedLocaleVariantsAppConfig app) {
         Map<String, Object> appToDecorate = normalizedCopy(rawApp);
         addContainerType(datasourceOf(appToDecorate));
-        for (Map<String, Object> subApp : subAppsOf(appToDecorate).values()) {
+        Map<String, Map<String, Object>> subApps = subAppsOf(appToDecorate);
+        Map<String, Map<String, Object>> twins = new LinkedHashMap<>();
+        subApps.forEach((name, subApp) -> {
             if (isBrowserSubApp(subApp)) {
                 decorateBrowser(subApp, app);
+            } else if (isDetailSubApp(name, subApp)) {
+                twins.put(name + TWIN_SUFFIX, buildVariantTwin(name, subApp, appToDecorate, app));
+                subApp.put("subAppClass", LocaleVariantAwareDetailSubApp.class.getName());
             }
-        }
+        });
+        subApps.putAll(twins);
         return appToDecorate;
     }
 
     private boolean isBrowserSubApp(Map<String, Object> subApp) {
         return subApp.get("actionbar") instanceof Map<?, ?> && subApp.get("workbench") instanceof Map<?, ?>;
+    }
+
+    // A sub-app with a form, not a twin already
+    private boolean isDetailSubApp(String name, Map<String, Object> subApp) {
+        return subApp.get("form") instanceof Map<?, ?> && !name.endsWith(TWIN_SUFFIX);
     }
 
     private void decorateBrowser(Map<String, Object> browser, ResolvedLocaleVariantsAppConfig app) {
@@ -86,6 +107,55 @@ public class AppDefinitionTransformer {
         if (!allowed.isEmpty() && !allowed.contains(VARIANTS_CONTAINER_TYPE)) {
             allowed.add(VARIANTS_CONTAINER_TYPE);
         }
+    }
+
+    // Build a twin of a detail sub-app compatible with variants nodes:
+    // - Node name read-only
+    // - No i18n field to force single-language editing
+    private Map<String, Object> buildVariantTwin(String name, Map<String, Object> detail, Map<String, Object> rawApp,
+            ResolvedLocaleVariantsAppConfig app) {
+        Map<String, Object> twin = normalizedCopy(detail);
+        twin.put("name", name + TWIN_SUFFIX);
+        // The generated i18n key of a sub-app's label contains its name: the twin
+        // uses its original's
+        twin.putIfAbsent("label", app.name() + "." + name + ".label");
+        Map<String, Object> form = formOf(twin);
+        String nodeNameProperty = nodeNameProperty(detail, rawApp);
+        fieldsOf(form).forEach((fieldName, field) -> {
+            if (JCR_NAME_FIELD.equals(fieldName) || fieldName.equals(nodeNameProperty)) {
+                field.put("readOnly", true);
+            }
+        });
+        removeI18n(form);
+        return twin;
+    }
+
+    // The sub-app's own datasource, else the app's
+    private String nodeNameProperty(Map<String, Object> detail, Map<String, Object> rawApp) {
+        Object own = datasourceOf(detail).get("nodeNameProperty");
+        Object shared = datasourceOf(rawApp).get("nodeNameProperty");
+        return own != null ? String.valueOf(own) : shared != null ? String.valueOf(shared) : null;
+    }
+
+    // Wherever a definition says "i18n: true", at any depth: switched to false.
+    // No need to know the kind of field or where it keeps its nested fields:
+    // false is Magnolia's default, so only an i18n written as true matters
+    private void removeI18n(Object node) {
+        if (node instanceof List<?> list) {
+            list.forEach(this::removeI18n);
+        } else if (node instanceof Map<?, ?> map) {
+            @SuppressWarnings("unchecked")
+            Map<String, Object> definition = (Map<String, Object>) map;
+            if (isTrue(definition.get("i18n"))) {
+                definition.put("i18n", false);
+            }
+            definition.values().forEach(this::removeI18n);
+        }
+    }
+
+    // true as YAML reads it: the boolean, or the text "true"
+    private static boolean isTrue(Object value) {
+        return Boolean.TRUE.equals(value) || "true".equalsIgnoreCase(String.valueOf(value));
     }
 
     // --- The addLocaleVariant action ---

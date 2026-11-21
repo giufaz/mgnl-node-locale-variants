@@ -14,6 +14,7 @@ import java.util.Map;
 import org.junit.jupiter.api.Test;
 
 import com.giufaz.magnolia.localevariants.app.create.AddLocaleVariantActionDefinition;
+import com.giufaz.magnolia.localevariants.app.form.LocaleVariantAwareDetailSubApp;
 import com.giufaz.magnolia.localevariants.app.guard.LocaleVariantDropConstraintDefinition;
 import com.giufaz.magnolia.localevariants.app.guard.LocaleVariantRuleDefinition;
 import com.giufaz.magnolia.localevariants.config.ResolvedLocaleVariantsAppConfig;
@@ -382,17 +383,180 @@ class AppDefinitionTransformerTest {
         assertEquals(wrapped, get(result, "subApps", "browser", "workbench", "contentViews", "tree", "dropConstraint"), "not twice");
     }
 
+    // --- Detail sub-apps: the twin for locale variants ---
+
+    @Test
+    void test_transform_detailTwin() {
+        Map<String, Object> detail = map("class", "info.magnolia.ui.contentapp.detail.DetailDescriptor",
+                "subAppClass", "my.DetailSubApp", "actions", map("commit", map()),
+                "form", map("properties", map("jcrName", map("$type", "textField"), "title", map("i18n", true))));
+        Map<String, Object> app = map("subApps", map("browser", browser(), "detail", detail));
+
+        Map<String, Object> result = transformer.transform(app, app("lvd:promo"));
+
+        assertEquals(List.of("browser", "detail", "detail_lvTwin"), List.copyOf(((Map<?, ?>) result.get("subApps")).keySet()));
+        assertEquals(LocaleVariantAwareDetailSubApp.class.getName(), get(result, "subApps", "detail", "subAppClass"),
+                "the sub-app opens through the module's class");
+        assertEquals(map("jcrName", map("$type", "textField"), "title", map("i18n", true)),
+                get(result, "subApps", "detail", "form", "properties"), "its form is left as written");
+
+        assertEquals("detail_lvTwin", get(result, "subApps", "detail_lvTwin", "name"));
+        assertEquals("my.DetailSubApp", get(result, "subApps", "detail_lvTwin", "subAppClass"), "keeps the original class");
+        assertEquals("info.magnolia.ui.contentapp.detail.DetailDescriptor", get(result, "subApps", "detail_lvTwin", "class"));
+        assertEquals(map("commit", map()), get(result, "subApps", "detail_lvTwin", "actions"), "same actions");
+        assertEquals(true, twinField(result, "jcrName").get("readOnly"), "node name");
+        assertEquals("textField", twinField(result, "jcrName").get("$type"));
+        assertNotI18n(twinField(result, "title"));
+        assertNull(twinField(result, "title").get("readOnly"), "other fields stay editable");
+    }
+
+    // No subAppClass written: the twin has none either, so Magnolia gives it
+    // the default class of its definition, as it did for the original
+    @Test
+    void test_transform_detailTwin_withoutSubAppClass() {
+        Map<String, Object> app = map("subApps", map("detail", map("form", map("properties", map("title", map())))));
+
+        Map<String, Object> result = transformer.transform(app, app("lvd:promo"));
+
+        assertEquals(LocaleVariantAwareDetailSubApp.class.getName(), get(result, "subApps", "detail", "subAppClass"));
+        assertFalse(((Map<?, ?>) get(result, "subApps", "detail_lvTwin")).containsKey("subAppClass"));
+    }
+
+    // The generated i18n key of a sub-app's label contains the sub-app name:
+    // the twin points to its original's key
+    @Test
+    void test_transform_detailTwin_label() {
+        Map<String, Object> app = map("subApps", map(
+                "detail", map("form", map()),
+                "edit", map("label", "Edit promo", "form", map())));
+
+        Map<String, Object> result = transformer.transform(app, app("lvd:promo"));
+
+        assertEquals("promos.detail.label", get(result, "subApps", "detail_lvTwin", "label"), "key of the original");
+        assertEquals("Edit promo", get(result, "subApps", "edit_lvTwin", "label"), "a written label is kept");
+        assertNull(get(result, "subApps", "detail", "label"), "the original gets none");
+    }
+
+    // The field that renames the node: "jcrName", or the one named by the
+    // datasource's nodeNameProperty (the sub-app's own, else the app's)
+    @Test
+    void test_transform_detailTwin_nodeNameProperty() {
+        Map<String, Object> fields = map("jcrName", map(), "name", map(), "slug", map(), "title", map());
+        Map<String, Object> app = map("datasource", map("nodeNameProperty", "name"), "subApps", map(
+                "detail", map("form", map("properties", normalizedCopy(fields))),
+                "other", map("datasource", map("nodeNameProperty", "slug"), "form", map("properties", normalizedCopy(fields)))));
+
+        Map<String, Object> result = transformer.transform(app, app("lvd:promo"));
+
+        assertEquals(List.of("jcrName", "name"), readOnlyFields(result, "detail_lvTwin"), "the app's datasource");
+        assertEquals(List.of("jcrName", "slug"), readOnlyFields(result, "other_lvTwin"), "the sub-app's own datasource");
+    }
+
+    @Test
+    void test_transform_detailTwin_noNodeNameProperty() {
+        Map<String, Object> app = map("datasource", map("workspace", "promos"), "subApps", map(
+                "detail", map("form", map("properties", map("name", map(), "title", map())))));
+
+        Map<String, Object> result = transformer.transform(app, app("lvd:promo"));
+
+        assertEquals(List.of(), readOnlyFields(result, "detail_lvTwin"), "a field called name is a normal field");
+        assertNull(get(result, "subApps", "detail", "datasource"), "the sub-app stays without a datasource");
+        assertNull(get(result, "subApps", "detail_lvTwin", "datasource"));
+    }
+
+    // "properties" written as a list of named fields
+    @Test
+    void test_transform_detailTwin_fieldsAsList() {
+        Map<String, Object> app = map("subApps", map("detail", map("form", map("properties", list(
+                map("name", "jcrName"), map("name", "title", "i18n", true), map("name", "url"))))));
+
+        Map<String, Object> result = transformer.transform(app, app("lvd:promo"));
+
+        List<?> fields = (List<?>) get(result, "subApps", "detail_lvTwin", "form", "properties");
+        assertEquals(3, fields.size(), "still a list");
+        assertEquals(true, ((Map<?, ?>) fields.get(0)).get("readOnly"));
+        assertNotI18n((Map<?, ?>) fields.get(1));
+        assertNull(((Map<?, ?>) fields.get(2)).get("readOnly"));
+    }
+
+    // Nested fields: composite ("properties"), multi ("field"), switchable
+    // ("field" and the "properties" of its "forms")
+    @Test
+    void test_transform_detailTwin_nestedI18nFields() {
+        Map<String, Object> composite = map("$type", "compositeField", "i18n", true,
+                "properties", map("street", map("i18n", true), "city", map()));
+        Map<String, Object> multi = map("$type", "jcrMultiField", "i18n", true,
+                "field", map("$type", "compositeField", "i18n", true, "properties", list(map("name", "text", "i18n", true))));
+        Map<String, Object> switchable = map("$type", "switchableField", "field", map("$type", "radioButtonGroupField", "i18n", true),
+                "forms", list(map("name", "internal", "properties", map("page", map("i18n", true)))));
+        Map<String, Object> app = map("subApps", map("detail", map("form", map(
+                "properties", map("address", composite, "links", multi, "target", switchable)))));
+        String originalForm = String.valueOf(get(app, "subApps", "detail", "form"));
+
+        Map<String, Object> result = transformer.transform(app, app("lvd:promo"));
+
+        Object twinForm = get(result, "subApps", "detail_lvTwin", "form");
+        assertFalse(twinForm.toString().contains("i18n=true"), "no i18n field at any depth: " + twinForm);
+        assertEquals("compositeField", twinField(result, "address").get("$type"), "the rest is kept");
+        assertEquals(originalForm, String.valueOf(get(result, "subApps", "detail", "form")), "the original keeps its i18n fields");
+    }
+
+    // Only an i18n written as true is switched off, wherever it is: no need to
+    // know how a field keeps its nested fields
+    @Test
+    void test_transform_detailTwin_i18nOnlyWhereTrue() {
+        Map<String, Object> custom = map("class", "my.CustomFieldDefinition", "i18n", "true",
+                "tabs", list(map("name", "first", "fields", list(map("name", "claim", "i18n", true)))));
+        Map<String, Object> app = map("subApps", map("detail", map("form", map("properties", map(
+                "custom", custom,
+                "plain", map("$type", "textField"),
+                "notI18n", map("i18n", false),
+                "configured", map("i18n", map("fallback", "en")))))));
+
+        Map<String, Object> result = transformer.transform(app, app("lvd:promo"));
+
+        assertEquals(false, twinField(result, "custom").get("i18n"), "written as text");
+        assertEquals(list(map("name", "first", "fields", list(map("name", "claim", "i18n", false)))),
+                twinField(result, "custom").get("tabs"), "nested under any name");
+        assertEquals(map("$type", "textField"), twinField(result, "plain"), "nothing added where i18n is not written");
+        assertEquals(map("i18n", false), twinField(result, "notI18n"));
+        assertEquals(map("i18n", map("fallback", "en")), twinField(result, "configured"), "an i18n that is not a flag is left");
+    }
+
+    @Test
+    void test_transform_everyDetailSubApp() {
+        Map<String, Object> app = map("subApps", map("browser", browser(), "detail", map("form", map()),
+                "quickEdit", map("form", map())));
+
+        Map<String, Object> result = transformer.transform(app, app("lvd:promo"));
+
+        assertEquals(List.of("browser", "detail", "quickEdit", "detail_lvTwin", "quickEdit_lvTwin"),
+                List.copyOf(((Map<?, ?>) result.get("subApps")).keySet()), "the twins come last");
+    }
+
+    // A definition that already has a twin (decorated twice): no twin of a twin
+    @Test
+    void test_transform_detailTwin_notOfATwin() {
+        Map<String, Object> app = map("subApps", map("detail", map("form", map()),
+                "detail_lvTwin", map("label", "written by hand", "form", map())));
+
+        Map<String, Object> result = transformer.transform(app, app("lvd:promo"));
+
+        assertEquals(List.of("detail", "detail_lvTwin"), List.copyOf(((Map<?, ?>) result.get("subApps")).keySet()));
+        assertNull(get(result, "subApps", "detail_lvTwin", "subAppClass"), "a twin never opens through the module's class");
+    }
+
     // --- Which sub-apps ---
 
-    // Only browsers (an action bar and a workbench). Pages' page editor has an
-    // action bar but no workbench
+    // Browsers (an action bar and a workbench) and detail sub-apps (a form).
+    // Pages' page editor has an action bar but no workbench, a chooser no form
     @Test
     void test_transform_otherSubApps() {
-        Map<String, Object> detail = map("actions", map("commit", map(), "duplicate", map()), "form", map("properties", map()));
         Map<String, Object> pageEditor = map("actions", map("editProperties", map()),
                 "actionbar", map("sections", map("pageActions", section("mgnl:page", "editActions", "editProperties"))));
         Map<String, Object> chooser = map("actions", map("choose", map()), "workbench", map("contentViews", map("tree", map())));
-        Map<String, Object> app = map("subApps", map("detail", detail, "pageEditor", pageEditor, "chooser", chooser));
+        Map<String, Object> formWithoutValue = map("actions", map("commit", map()), "form", null);
+        Map<String, Object> app = map("subApps", map("pageEditor", pageEditor, "chooser", chooser, "empty", formWithoutValue));
 
         Map<String, Object> result = transformer.transform(app, app("mgnl:page"));
 
@@ -426,7 +590,9 @@ class AppDefinitionTransformerTest {
                         "actions", map("editItem", map("availability", map("nodeTypes", list("lvd:promo"), "rules", list(map("class", "my.Rule")))),
                                 "copy", map()),
                         "actionbar", map("sections", list(listSection("item", "lvd:promo"))),
-                        "workbench", map("contentViews", list(map("name", "tree", "dropConstraint", map("class", "my.Constraint")))))));
+                        "workbench", map("contentViews", list(map("name", "tree", "dropConstraint", map("class", "my.Constraint"))))),
+                        "detail", map("subAppClass", "my.DetailSubApp", "form", map("properties", list(
+                                map("name", "jcrName"), map("name", "title", "i18n", true))))));
         // A snapshot that shares nothing with the source
         String before = app.toString();
 
@@ -480,6 +646,22 @@ class AppDefinitionTransformerTest {
     private static List<String> itemNames(Map<String, Object> result, String section, String group) {
         Map<?, ?> items = (Map<?, ?>) get(result, "subApps", "browser", "actionbar", "sections", section, "groups", group, "items");
         return items.keySet().stream().map(String::valueOf).toList();
+    }
+
+    // A field of the form of the twin of "detail" (fields written as a map)
+    private static Map<?, ?> twinField(Map<String, Object> result, String field) {
+        return (Map<?, ?>) get(result, "subApps", "detail_lvTwin", "form", "properties", field);
+    }
+
+    private static List<String> readOnlyFields(Map<String, Object> result, String subApp) {
+        Map<?, ?> fields = (Map<?, ?>) get(result, "subApps", subApp, "form", "properties");
+        return fields.entrySet().stream().filter(field -> Boolean.TRUE.equals(((Map<?, ?>) field.getValue()).get("readOnly")))
+                .map(field -> String.valueOf(field.getKey())).toList();
+    }
+
+    // Not written or false: both mean "not i18n" to Magnolia
+    private static void assertNotI18n(Map<?, ?> field) {
+        assertFalse(Boolean.TRUE.equals(field.get("i18n")), "i18n: " + field);
     }
 
     // Follows the keys of the maps: null if a part is missing

@@ -1,0 +1,26 @@
+# Edits a banner CTA of the "ctas" app in a dialog (action editBanner), not in a detail sub-app
+label: Banner CTA
+form:
+  properties:
+    name:
+      $type: textField
+      label: Name
+      required: true
+    label:
+      $type: textField
+      label: Label
+      i18n: true
+    url:
+      $type: textField
+      label: URL
+actions:
+  commit:
+    $type: commitAction
+  cancel:
+    $type: closeAction
+footerLayout:
+  $type: defaultEditorActionLayout
+  primaryActions:
+    commit: commit
+  secondaryActions:
+    cancel: cancel

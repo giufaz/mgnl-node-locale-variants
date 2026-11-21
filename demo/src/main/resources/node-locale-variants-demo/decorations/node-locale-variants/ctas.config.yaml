@@ -2,7 +2,7 @@
 # lvd:ctaContact is left out on purpose: its items stay as Magnolia ships them.
 apps:
   ctas:
-    nodeTypes: [lvd:ctaSocial, lvd:ctaLink]
-    variantActions: [editSocial, editLink]       # added to defaults.variantActions
+    nodeTypes: [lvd:ctaSocial, lvd:ctaLink, lvd:ctaBanner]
+    variantActions: [editSocial, editLink, editBanner]   # added to defaults.variantActions
     containerActions: []
     replaceDefaultContainerActions: true         # no action on this app's containers

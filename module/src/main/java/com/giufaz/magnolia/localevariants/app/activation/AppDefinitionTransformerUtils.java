@@ -91,6 +91,32 @@ final class AppDefinitionTransformerUtils {
                 : new LinkedHashMap<>();
     }
 
+    static Map<String, Object> formOf(Map<String, Object> subApp) {
+        return getChildMap(subApp, "form");
+    }
+
+    // The fields under "properties" (of a form, or of a composite field), by
+    // name: written as a map or as a list with "name", left as written
+    @SuppressWarnings("unchecked")
+    static Map<String, Map<String, Object>> fieldsOf(Map<String, Object> formOrField) {
+        Map<String, Map<String, Object>> fields = new LinkedHashMap<>();
+        Object properties = formOrField.get("properties");
+        if (properties instanceof Map<?, ?> map) {
+            map.forEach((name, field) -> {
+                if (field instanceof Map<?, ?>) {
+                    fields.put(String.valueOf(name), (Map<String, Object>) field);
+                }
+            });
+        } else if (properties instanceof List<?> list) {
+            for (Object field : list) {
+                if (field instanceof Map<?, ?> map && map.get("name") != null) {
+                    fields.put(String.valueOf(map.get("name")), (Map<String, Object>) field);
+                }
+            }
+        }
+        return fields;
+    }
+
     static Map<String, Object> actionbarOf(Map<String, Object> subApp) {
         return getChildMap(subApp, "actionbar");
     }

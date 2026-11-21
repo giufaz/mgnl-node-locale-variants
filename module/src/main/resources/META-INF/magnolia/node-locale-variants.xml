@@ -37,6 +37,16 @@
     </component>
   </components>
 
+  <!-- Locale variants authored in one language in Vaadin dialogs and in the page editor: wraps the authoring support
+       mapped in "main", and only acts in the apps of the module config -->
+  <components>
+    <id>subapp</id>
+    <component>
+      <type>info.magnolia.ui.api.i18n.I18NAuthoringSupport</type>
+      <implementation>com.giufaz.magnolia.localevariants.app.form.LocaleVariantI18nAuthoringSupport</implementation>
+    </component>
+  </components>
+
   <dependencies>
     <dependency>
       <name>core</name>

@@ -210,6 +210,51 @@ class AppDefinitionTransformerUtilsTest {
         assertEquals(map("datasource", map("workspace", "promos", "allowedNodeTypes", list("lvd:promo"))), subApp);
     }
 
+    // --- Forms ---
+
+    @Test
+    void test_formOf() {
+        Map<String, Object> subApp = map("form", map("properties", map("title", map())));
+        assertSame(subApp.get("form"), formOf(subApp), "the definition's own map");
+
+        Map<String, Object> withoutForm = map();
+        formOf(withoutForm);
+        assertEquals(map("form", map()), withoutForm, "added empty");
+    }
+
+    @Test
+    void test_fieldsOf_asMap() {
+        Map<String, Object> title = map("i18n", true);
+        Map<String, Object> form = map("properties", map("title", title, "broken", "not a field", "empty", null));
+
+        Map<String, Map<String, Object>> fields = fieldsOf(form);
+
+        assertEquals(List.of("title"), List.copyOf(fields.keySet()), "only the fields that are maps");
+        assertSame(title, fields.get("title"), "the definition's own map");
+    }
+
+    @Test
+    void test_fieldsOf_asList() {
+        Map<String, Object> title = map("name", "title");
+        List<Object> written = list(map("name", "jcrName"), title, map("label", "no name"), "not a field");
+        Map<String, Object> form = map("properties", written);
+
+        Map<String, Map<String, Object>> fields = fieldsOf(form);
+
+        assertEquals(List.of("jcrName", "title"), List.copyOf(fields.keySet()), "by name, in order");
+        assertSame(title, fields.get("title"));
+        assertSame(written, form.get("properties"), "left as a list");
+    }
+
+    @Test
+    void test_fieldsOf_withoutProperties() {
+        Map<String, Object> field = map("$type", "textField");
+
+        assertTrue(fieldsOf(field).isEmpty());
+        assertTrue(fieldsOf(map("properties", null)).isEmpty());
+        assertEquals(map("$type", "textField"), field, "nothing added");
+    }
+
     // Mutable and ordered, like the YAML reader's output
     static Map<String, Object> map(Object... keyValues) {
         Map<String, Object> map = new LinkedHashMap<>();
