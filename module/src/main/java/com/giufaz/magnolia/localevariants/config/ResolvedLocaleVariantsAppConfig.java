@@ -7,8 +7,8 @@ import java.util.List;
 /**
  * An app with locale variants as the module applies it: the config of an
  * eligible app ({@link LocaleVariantsAppConfig}) with its action lists
- * resolved against the module config {@code defaults}. Immutable: rebuilt at
- * every module start.
+ * and its other settings resolved against the module config {@code defaults}.
+ * Immutable: rebuilt at every module start.
  *
  * <p>
  * The guardrail actions (copy, move, duplicate, rename, paste,
@@ -20,9 +20,11 @@ import java.util.List;
  * @param variantActions   the browser actions allowed on its variants
  * @param containerActions the browser actions allowed on its variants
  *                         containers, in the order of the config
+ * @param recursiveRestore whether its "Restore previous version" also restores
+ *                         the nodes under the restored one
  */
 public record ResolvedLocaleVariantsAppConfig(String name, List<String> nodeTypes, List<String> variantActions,
-        List<String> containerActions) {
+        List<String> containerActions, boolean recursiveRestore) {
 
     public ResolvedLocaleVariantsAppConfig {
         nodeTypes = List.copyOf(nodeTypes);
@@ -36,7 +38,8 @@ public record ResolvedLocaleVariantsAppConfig(String name, List<String> nodeType
                 resolve(defaults.getVariantActions(), config.getVariantActions(),
                         config.isReplaceDefaultVariantActions()),
                 resolve(defaults.getContainerActions(), config.getContainerActions(),
-                        config.isReplaceDefaultContainerActions()));
+                        config.isReplaceDefaultContainerActions()),
+                defaults.isRecursiveRestore());
     }
 
     // The app's own list added to the defaults, or replacing them (even empty)

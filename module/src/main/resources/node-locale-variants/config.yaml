@@ -6,6 +6,8 @@ defaults:
                    restorePreviousVersion, deletePermanently, activateDeleted]
   containerActions: [activate, deactivate, export, confirmMarkDeletion, markDeleted, activateDeleted, deletePermanently,
                      restorePreviousVersion]
+  # If true, replace Magnolia's default restore action, with its more complete recursive one
+  recursiveRestore: true
 
 # Per app: nodeTypes (required), enabled, variantActions / containerActions (added to the defaults),
 # replaceDefaultVariantActions / replaceDefaultContainerActions (true = only the app's lists)

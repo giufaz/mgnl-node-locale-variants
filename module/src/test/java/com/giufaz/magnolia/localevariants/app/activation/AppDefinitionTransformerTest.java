@@ -3,6 +3,9 @@ package com.giufaz.magnolia.localevariants.app.activation;
 import static com.giufaz.magnolia.localevariants.app.activation.AppDefinitionTransformer.ADD_ACTION;
 import static com.giufaz.magnolia.localevariants.app.activation.AppDefinitionTransformer.CONTAINER_GROUP;
 import static com.giufaz.magnolia.localevariants.app.activation.AppDefinitionTransformer.CONTAINER_SECTION;
+import static com.giufaz.magnolia.localevariants.app.activation.AppDefinitionTransformer.RECURSIVE_RESTORE_TYPE;
+import static com.giufaz.magnolia.localevariants.app.activation.AppDefinitionTransformer.RESTORE_CLASS;
+import static com.giufaz.magnolia.localevariants.app.activation.AppDefinitionTransformer.RESTORE_TYPE;
 import static com.giufaz.magnolia.localevariants.app.activation.AppDefinitionTransformerUtils.normalizedCopy;
 import static com.giufaz.magnolia.localevariants.app.activation.AppDefinitionTransformerUtilsTest.list;
 import static com.giufaz.magnolia.localevariants.app.activation.AppDefinitionTransformerUtilsTest.map;
@@ -546,6 +549,64 @@ class AppDefinitionTransformerTest {
         assertNull(get(result, "subApps", "detail_lvTwin", "subAppClass"), "a twin never opens through the module's class");
     }
 
+    // --- Recursive restore ---
+
+    @Test
+    void test_transform_recursiveRestore() {
+        Map<String, Object> app = map("subApps", map("browser", browser("actions", map(
+                "restorePreviousVersion", map("$type", RESTORE_TYPE, "icon", "icon-undo", "parentNodeTypeOnly", true,
+                        "availability", map("rules", map("isDeleted", map("$type", "jcrIsDeletedRule")))),
+                "restoreByClass", map("class", RESTORE_CLASS, "successMessage", "my.message", "alwaysShowSuccessMessage", false)))));
+
+        Map<String, Object> result = transformer.transform(app, app("lvd:promo"));
+
+        Map<?, ?> restore = (Map<?, ?>) get(result, "subApps", "browser", "actions", "restorePreviousVersion");
+        assertEquals(RECURSIVE_RESTORE_TYPE, restore.get("$type"));
+        assertEquals("icon-undo", restore.get("icon"), "the rest of the action is kept");
+        assertNotNull(get(result, "subApps", "browser", "actions", "restorePreviousVersion", "availability", "rules", "isDeleted"));
+        assertFalse(restore.containsKey("parentNodeTypeOnly"), "unknown to the recursive action");
+        assertEquals("notification.item.restored", restore.get("successMessage"), "the replaced action's defaults");
+        assertEquals(true, restore.get("alwaysShowSuccessMessage"));
+
+        Map<?, ?> byClass = (Map<?, ?>) get(result, "subApps", "browser", "actions", "restoreByClass");
+        assertEquals(RECURSIVE_RESTORE_TYPE, byClass.get("$type"));
+        assertFalse(byClass.containsKey("class"));
+        assertEquals("my.message", byClass.get("successMessage"), "what the app wrote is kept");
+        assertEquals(false, byClass.get("alwaysShowSuccessMessage"));
+    }
+
+    // A project's own restore, other actions, and the restore of a version
+    @Test
+    void test_transform_recursiveRestore_otherActions() {
+        Map<String, Object> actions = map(
+                "restorePreviousVersion", map("class", "my.project.RestoreActionDefinition"),
+                "restoreVersion", map("$type", "restoreJcrVersionAction"),
+                "editItem", map("$type", "openDetailSubappAction"));
+        Map<String, Object> app = map("subApps", map("browser", browser("actions", normalizedCopy(actions))));
+
+        Map<String, Object> result = transformer.transform(app, app("lvd:promo"));
+
+        assertEquals("my.project.RestoreActionDefinition", get(result, "subApps", "browser", "actions", "restorePreviousVersion", "class"));
+        assertNull(get(result, "subApps", "browser", "actions", "restorePreviousVersion", "$type"));
+        assertEquals("restoreJcrVersionAction", get(result, "subApps", "browser", "actions", "restoreVersion", "$type"));
+        assertEquals("openDetailSubappAction", get(result, "subApps", "browser", "actions", "editItem", "$type"));
+    }
+
+    @Test
+    void test_transform_recursiveRestore_switchedOff() {
+        Map<String, Object> app = map("subApps", map("browser", browser("actions", map(
+                "restorePreviousVersion", map("$type", RESTORE_TYPE, "parentNodeTypeOnly", true)))));
+        ResolvedLocaleVariantsAppConfig withoutRecursiveRestore = new ResolvedLocaleVariantsAppConfig("promos",
+                List.of("lvd:promo"), List.of("editItem"), List.of("activate"), false);
+
+        Map<String, Object> result = transformer.transform(app, withoutRecursiveRestore);
+
+        Map<?, ?> restore = (Map<?, ?>) get(result, "subApps", "browser", "actions", "restorePreviousVersion");
+        assertEquals(RESTORE_TYPE, restore.get("$type"), "the app's own action");
+        assertEquals(true, restore.get("parentNodeTypeOnly"));
+        assertFalse(restore.containsKey("successMessage"));
+    }
+
     // --- Which sub-apps ---
 
     // Browsers (an action bar and a workbench) and detail sub-apps (a form).
@@ -607,7 +668,7 @@ class AppDefinitionTransformerTest {
 
     private static ResolvedLocaleVariantsAppConfig app(List<String> nodeTypes, List<String> variantActions,
             List<String> containerActions) {
-        return new ResolvedLocaleVariantsAppConfig("promos", nodeTypes, variantActions, containerActions);
+        return new ResolvedLocaleVariantsAppConfig("promos", nodeTypes, variantActions, containerActions, true);
     }
 
     // A browser sub-app: an action bar and a workbench, plus (or replaced by) the given parts

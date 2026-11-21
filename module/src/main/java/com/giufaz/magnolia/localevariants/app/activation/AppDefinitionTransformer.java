@@ -33,7 +33,12 @@ import com.giufaz.magnolia.localevariants.config.ResolvedLocaleVariantsAppConfig
  * <li>containers get their own action bar section, with the allowed container
  * actions;</li>
  * <li>variants and containers can't be dragged, and nothing can be dropped on
- * them.</li>
+ * them;</li>
+ * <li>"Restore previous version" ({@code restorePreviousJcrVersionAction})
+ * becomes Magnolia's {@code recursiveRestorePreviousJcrVersionAction}:
+ * restoring a deleted original or container brings back the variants under
+ * it too. Module config {@code defaults.recursiveRestore: false} keeps the
+ * app's own action.</li>
  * </ul>
  * <p>
  * On each detail sub-app (a sub-app with a form):
@@ -56,6 +61,11 @@ public class AppDefinitionTransformer {
 
     // The form field that holds the node name when the datasource names none
     private static final String JCR_NAME_FIELD = "jcrName";
+
+    // Magnolia's restore action of a deleted node, and its recursive one
+    static final String RESTORE_TYPE = "restorePreviousJcrVersionAction";
+    static final String RESTORE_CLASS = "info.magnolia.ui.contentapp.action.RestorePreviousJcrVersionActionDefinition";
+    static final String RECURSIVE_RESTORE_TYPE = "recursiveRestorePreviousJcrVersionAction";
 
     // Never on variants and containers: recognized by name, $type, class or the
     // rename dialog
@@ -96,6 +106,9 @@ public class AppDefinitionTransformer {
         addContainerType(datasourceOf(browser));
         addAddVariantAction(browser, app);
         guardVariantsAndContainers(browser, app);
+        if (app.recursiveRestore()) {
+            actionsOf(browser).values().forEach(this::makeRestoreRecursive);
+        }
     }
 
     // --- Variants and containers show in the tree ---
@@ -156,6 +169,26 @@ public class AppDefinitionTransformer {
     // true as YAML reads it: the boolean, or the text "true"
     private static boolean isTrue(Object value) {
         return Boolean.TRUE.equals(value) || "true".equalsIgnoreCase(String.valueOf(value));
+    }
+
+    // --- Recursive restore ---
+
+    // Magnolia's restore action (by $type or by its exact class) becomes
+    // Magnolia's recursive one, which restores every node under the restored
+    // one too. A project's own subclass of the definition is left as it is
+    private void makeRestoreRecursive(Map<String, Object> action) {
+        boolean isMagnoliaRestore = RESTORE_TYPE.equals(action.get("$type"))
+                || RESTORE_CLASS.equals(action.get("class"));
+        if (!isMagnoliaRestore) {
+            return;
+        }
+        action.remove("class");
+        action.put("$type", RECURSIVE_RESTORE_TYPE);
+        // A property of the replaced definition only: unknown to the recursive one
+        action.remove("parentNodeTypeOnly");
+        // Defaults of the replaced definition, which the recursive one doesn't set
+        action.putIfAbsent("successMessage", "notification.item.restored");
+        action.putIfAbsent("alwaysShowSuccessMessage", true);
     }
 
     // --- The addLocaleVariant action ---

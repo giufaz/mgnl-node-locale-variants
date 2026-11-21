@@ -53,10 +53,20 @@ class ResolvedLocaleVariantsAppConfigTest {
         assertEquals(List.of(), app.containerActions());
     }
 
+    // From the defaults: on unless the config switches it off
+    @Test
+    void test_of_recursiveRestore() {
+        ActionDefaults defaults = new ActionDefaults();
+        assertTrue(ResolvedLocaleVariantsAppConfig.of("promos", config("lvd:promo"), defaults).recursiveRestore());
+
+        defaults.setRecursiveRestore(false);
+        assertFalse(ResolvedLocaleVariantsAppConfig.of("promos", config("lvd:promo"), defaults).recursiveRestore());
+    }
+
     @Test
     void test_allows() {
         ResolvedLocaleVariantsAppConfig app = new ResolvedLocaleVariantsAppConfig("promos", List.of("lvd:promo"),
-                List.of("editItem"), List.of("activate"));
+                List.of("editItem"), List.of("activate"), true);
 
         assertTrue(app.allowsOnVariant("editItem"));
         assertFalse(app.allowsOnVariant("activate"), "allowed on containers only");
@@ -71,7 +81,7 @@ class ResolvedLocaleVariantsAppConfigTest {
         List<String> variantActions = new ArrayList<>(List.of("editItem"));
         List<String> containerActions = new ArrayList<>(List.of("activate"));
         ResolvedLocaleVariantsAppConfig app = new ResolvedLocaleVariantsAppConfig("promos", nodeTypes, variantActions,
-                containerActions);
+                containerActions, true);
 
         nodeTypes.add("lvd:other");
         variantActions.add("duplicate");
@@ -96,7 +106,7 @@ class ResolvedLocaleVariantsAppConfigTest {
 
     private static ResolvedLocaleVariantsAppConfig app(String name, String nodeType, String variantAction,
             String containerAction) {
-        return new ResolvedLocaleVariantsAppConfig(name, List.of(nodeType), List.of(variantAction), List.of(containerAction));
+        return new ResolvedLocaleVariantsAppConfig(name, List.of(nodeType), List.of(variantAction), List.of(containerAction), true);
     }
 
     private static LocaleVariantsAppConfig config(String... nodeTypes) {

@@ -36,7 +36,7 @@ class LocaleVariantRuleTest {
         when(variantStructure.isValidVariant(broken)).thenThrow(new RepositoryException("simulated"));
         when(variantStructure.isVariantsContainer(broken)).thenThrow(new RepositoryException("simulated"));
         when(appActivation.getAppliedApp("promos")).thenReturn(new ResolvedLocaleVariantsAppConfig("promos",
-                List.of("lvd:promo"), List.of("editItem"), List.of("activate")));
+                List.of("lvd:promo"), List.of("editItem"), List.of("activate"), true));
     }
 
     @Test
@@ -104,7 +104,7 @@ class LocaleVariantRuleTest {
         assertFalse(rule.isAvailable(List.of(variant)));
 
         when(appActivation.getAppliedApp("promos")).thenReturn(new ResolvedLocaleVariantsAppConfig("promos",
-                List.of("lvd:promo"), List.of("editItem", "export"), List.of()));
+                List.of("lvd:promo"), List.of("editItem", "export"), List.of(), true));
 
         assertTrue(rule.isAvailable(List.of(variant)));
     }
