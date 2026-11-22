@@ -168,6 +168,11 @@ public class LocaleVariantStructure {
         return node.isNodeType(VARIANT_MIXIN) && node.getName().startsWith(VARIANT_PREFIX);
     }
 
+    /** Whether the node has a child named as the variants container: the name only, cheap enough for a browser row. */
+    public boolean hasVariantsContainer(Node original) throws RepositoryException {
+        return original.hasNode(VARIANTS_CONTAINER_NAME);
+    }
+
     Optional<Node> getVariantsContainer(Node original) throws RepositoryException {
         if (!original.hasNode(VARIANTS_CONTAINER_NAME)) {
             return Optional.empty();

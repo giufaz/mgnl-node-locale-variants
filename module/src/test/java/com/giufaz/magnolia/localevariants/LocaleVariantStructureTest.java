@@ -134,6 +134,14 @@ class LocaleVariantStructureTest {
                 "container without its type");
     }
 
+    // The name only: an empty container counts too
+    @Test
+    void test_hasVariantsContainer() throws RepositoryException {
+        assertTrue(variantStructure.hasVariantsContainer(original(variant("variant_de"))));
+        assertTrue(variantStructure.hasVariantsContainer(original()), "empty container");
+        assertFalse(variantStructure.hasVariantsContainer(node(1, node(0, null), "mgnl:versionable")), "no container");
+    }
+
     @Test
     void test_hasVariant_onlyValidVariantOfThatLocale() throws RepositoryException {
         singleSite(i18n(Locale.GERMAN));

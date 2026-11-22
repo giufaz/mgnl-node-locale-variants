@@ -1,15 +1,18 @@
 package com.giufaz.magnolia.localevariants.app.activation;
 
+import static com.giufaz.magnolia.localevariants.LocaleVariantStructure.VARIANTS_CONTAINER_NAME;
 import static com.giufaz.magnolia.localevariants.LocaleVariantStructure.VARIANTS_CONTAINER_TYPE;
 import static com.giufaz.magnolia.localevariants.app.activation.AppDefinitionTransformerUtils.*;
 import static com.giufaz.magnolia.localevariants.app.form.LocaleVariantAwareDetailSubApp.TWIN_SUFFIX;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import com.giufaz.magnolia.localevariants.app.browser.LocalizedColumnDefinition;
 import com.giufaz.magnolia.localevariants.app.create.AddLocaleVariantActionDefinition;
 import com.giufaz.magnolia.localevariants.app.form.LocaleVariantAwareDetailSubApp;
 import com.giufaz.magnolia.localevariants.app.guard.LocaleVariantDropConstraintDefinition;
@@ -34,6 +37,9 @@ import com.giufaz.magnolia.localevariants.config.ResolvedLocaleVariantsAppConfig
  * actions;</li>
  * <li>variants and containers can't be dragged, and nothing can be dropped on
  * them;</li>
+ * <li>column "Localized" after the first column of every view
+ * ({@link LocalizedColumnDefinition}), and a filter "Localized" that lists
+ * the originals with variants;</li>
  * <li>"Restore previous version" ({@code restorePreviousJcrVersionAction})
  * becomes Magnolia's {@code recursiveRestorePreviousJcrVersionAction}:
  * restoring a deleted original or container brings back the variants under
@@ -52,6 +58,10 @@ public class AppDefinitionTransformer {
 
     public static final String ADD_ACTION = "addLocaleVariant";
     public static final String CONTAINER_SECTION = "localeVariants";
+    // The property the "Localized" filter compares: the type of the child node
+    // "localeVariants"
+    public static final String LOCALIZED_FILTER = VARIANTS_CONTAINER_NAME + "@jcr:primaryType";
+    static final String LOCALIZED_FILTER_OPTION = "hasVariants";
     static final String CONTAINER_GROUP = "containerActions";
 
     // The group of the "add" buttons in content-types apps
@@ -109,6 +119,9 @@ public class AppDefinitionTransformer {
         if (app.recursiveRestore()) {
             actionsOf(browser).values().forEach(this::makeRestoreRecursive);
         }
+        Map<String, Object> workbench = workbenchOf(browser);
+        contentViewsOf(workbench).values().forEach(this::addLocalizedColumn);
+        addLocalizedFilter(workbench);
     }
 
     // --- Variants and containers show in the tree ---
@@ -169,6 +182,39 @@ public class AppDefinitionTransformer {
     // true as YAML reads it: the boolean, or the text "true"
     private static boolean isTrue(Object value) {
         return Boolean.TRUE.equals(value) || "true".equalsIgnoreCase(String.valueOf(value));
+    }
+
+    // --- The "Localized" column and filter ---
+
+    // After the first column (the name) of a view that lists its columns
+    private void addLocalizedColumn(Map<String, Object> view) {
+        Map<String, Object> column = new LinkedHashMap<>();
+        column.put("name", LocalizedColumnDefinition.NAME);
+        column.put("class", LocalizedColumnDefinition.class.getName());
+        addNamedItemAfterFirst(view, "columns", LocalizedColumnDefinition.NAME, column);
+    }
+
+    // The filter "Localized": lists the originals that have variants, i.e. a
+    // child node "localeVariants" of the container type. Magnolia reads the
+    // filter's name as "<relative path>@<property>" and joins that child node:
+    // the query time grows with the number of items of the app
+    private void addLocalizedFilter(Map<String, Object> workbench) {
+        Map<String, Object> option = new LinkedHashMap<>();
+        option.put("name", LOCALIZED_FILTER_OPTION);
+        option.put("value", VARIANTS_CONTAINER_TYPE);
+        option.put("label", "node-locale-variants.filter.option");
+        Map<String, Object> datasource = new LinkedHashMap<>();
+        datasource.put("$type", "optionListDatasource");
+        datasource.put("options", new ArrayList<>(List.of(option)));
+
+        Map<String, Object> filter = new LinkedHashMap<>();
+        filter.put("name", LOCALIZED_FILTER);
+        filter.put("$type", "dropdown");
+        filter.put("label", "node-locale-variants.filter.label");
+        filter.put("icon", LocalizedColumnDefinition.ICON);
+        filter.put("filterOperator", "EQUALS");
+        filter.put("datasource", datasource);
+        addNamedItemLast(workbench, "filters", LOCALIZED_FILTER, filter);
     }
 
     // --- Recursive restore ---

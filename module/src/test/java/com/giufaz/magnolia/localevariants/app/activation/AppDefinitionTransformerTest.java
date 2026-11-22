@@ -3,6 +3,7 @@ package com.giufaz.magnolia.localevariants.app.activation;
 import static com.giufaz.magnolia.localevariants.app.activation.AppDefinitionTransformer.ADD_ACTION;
 import static com.giufaz.magnolia.localevariants.app.activation.AppDefinitionTransformer.CONTAINER_GROUP;
 import static com.giufaz.magnolia.localevariants.app.activation.AppDefinitionTransformer.CONTAINER_SECTION;
+import static com.giufaz.magnolia.localevariants.app.activation.AppDefinitionTransformer.LOCALIZED_FILTER;
 import static com.giufaz.magnolia.localevariants.app.activation.AppDefinitionTransformer.RECURSIVE_RESTORE_TYPE;
 import static com.giufaz.magnolia.localevariants.app.activation.AppDefinitionTransformer.RESTORE_CLASS;
 import static com.giufaz.magnolia.localevariants.app.activation.AppDefinitionTransformer.RESTORE_TYPE;
@@ -16,6 +17,7 @@ import java.util.Map;
 
 import org.junit.jupiter.api.Test;
 
+import com.giufaz.magnolia.localevariants.app.browser.LocalizedColumnDefinition;
 import com.giufaz.magnolia.localevariants.app.create.AddLocaleVariantActionDefinition;
 import com.giufaz.magnolia.localevariants.app.form.LocaleVariantAwareDetailSubApp;
 import com.giufaz.magnolia.localevariants.app.guard.LocaleVariantDropConstraintDefinition;
@@ -62,8 +64,8 @@ class AppDefinitionTransformerTest {
 
         Map<String, Object> result = transformer.transform(app, app("lvd:promo"));
 
-        assertFalse(result.toString().contains("lv:localeVariants"), "neither missing nor empty: " + result);
-        assertEquals("promos", get(result, "datasource", "workspace"));
+        assertEquals(map("workspace", "promos", "allowedNodeTypes", list()), get(result, "datasource"), "missing");
+        assertEquals(list(), get(result, "subApps", "browser", "datasource", "allowedNodeTypes"), "empty");
     }
 
     // A browser without a datasource uses the app's: it must stay without
@@ -547,6 +549,68 @@ class AppDefinitionTransformerTest {
 
         assertEquals(List.of("detail", "detail_lvTwin"), List.copyOf(((Map<?, ?>) result.get("subApps")).keySet()));
         assertNull(get(result, "subApps", "detail_lvTwin", "subAppClass"), "a twin never opens through the module's class");
+    }
+
+    // --- The "Localized" column ---
+
+    @Test
+    void test_transform_localizedColumn() {
+        Map<String, Object> app = map("subApps", map("browser", browser("workbench", map("contentViews", list(
+                map("name", "tree", "columns", list(map("name", "jcrName"), map("name", "status"))),
+                map("name", "list", "columns", map("jcrName", map(), "status", map())),
+                map("name", "thumbnail"))))));
+
+        Map<String, Object> result = transformer.transform(app, app("lvd:promo"));
+
+        List<?> treeColumns = (List<?>) get(result, "subApps", "browser", "workbench", "contentViews", "tree", "columns");
+        assertEquals(list(map("name", "jcrName"), map("name", "lvLocalized", "class", LocalizedColumnDefinition.class.getName()),
+                map("name", "status")), treeColumns, "after the first column");
+        Map<?, ?> listColumns = (Map<?, ?>) get(result, "subApps", "browser", "workbench", "contentViews", "list", "columns");
+        assertEquals(List.of("jcrName", "lvLocalized", "status"), List.copyOf(listColumns.keySet()));
+        assertNull(get(result, "subApps", "browser", "workbench", "contentViews", "thumbnail", "columns"),
+                "a view without columns uses its defaults");
+    }
+
+    // A definition decorated twice
+    @Test
+    void test_transform_localizedColumn_once() {
+        Map<String, Object> app = map("subApps", map("browser", browser("workbench", map("contentViews", map(
+                "tree", map("columns", list(map("name", "jcrName"), map("name", "lvLocalized"))))))));
+
+        Map<String, Object> result = transformer.transform(app, app("lvd:promo"));
+
+        assertEquals(list(map("name", "jcrName"), map("name", "lvLocalized")),
+                get(result, "subApps", "browser", "workbench", "contentViews", "tree", "columns"));
+    }
+
+    // Lists the originals that have a child "localeVariants" of the container
+    // type: Magnolia reads the filter's name as "<relative path>@<property>"
+    @Test
+    void test_transform_localizedFilter() {
+        Map<String, Object> app = map("subApps", map(
+                "browser", browser(),
+                "archive", browser("workbench", map("filters", list(map("name", "status"))))));
+
+        Map<String, Object> result = transformer.transform(app, app("lvd:promo"));
+
+        Map<String, Object> expected = map("name", "localeVariants@jcr:primaryType", "$type", "dropdown",
+                "label", "node-locale-variants.filter.label", "icon", "icon-language-app", "filterOperator", "EQUALS",
+                "datasource", map("$type", "optionListDatasource", "options", list(map("name", "hasVariants",
+                        "value", "lv:localeVariants", "label", "node-locale-variants.filter.option"))));
+        assertEquals(list(expected), get(result, "subApps", "browser", "workbench", "filters"), "a workbench without filters");
+        assertEquals(list(map("name", "status"), expected), get(result, "subApps", "archive", "workbench", "filters"),
+                "after the app's own filters");
+    }
+
+    // A definition decorated twice
+    @Test
+    void test_transform_localizedFilter_once() {
+        Map<String, Object> written = map("name", LOCALIZED_FILTER, "label", "written by hand");
+        Map<String, Object> app = map("subApps", map("browser", browser("workbench", map("filters", list(written)))));
+
+        Map<String, Object> result = transformer.transform(app, app("lvd:promo"));
+
+        assertEquals(list(written), get(result, "subApps", "browser", "workbench", "filters"));
     }
 
     // --- Recursive restore ---

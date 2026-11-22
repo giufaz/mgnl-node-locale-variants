@@ -117,6 +117,55 @@ final class AppDefinitionTransformerUtils {
         return fields;
     }
 
+    // Adds a named item to the collection under parent.key, right after its
+    // first item. The collection is written as a map or as a list with "name"
+    // and is left as written. Nothing is added if the collection is missing
+    // (the definition uses its defaults) or has an item with this name already
+    @SuppressWarnings("unchecked")
+    static void addNamedItemAfterFirst(Map<String, Object> parent, String key, String name,
+            Map<String, Object> item) {
+        Object collection = parent.get(key);
+        if (collection instanceof List<?> list) {
+            if (!hasNamedItem(list, name)) {
+                ((List<Object>) list).add(Math.min(1, list.size()), item);
+            }
+        } else if (collection instanceof Map<?, ?> map && !map.containsKey(name)) {
+            // A map has no "insert at": rebuilt in the new order
+            Map<String, Object> reordered = new LinkedHashMap<>();
+            int position = 0;
+            for (Map.Entry<String, Object> existing : ((Map<String, Object>) map).entrySet()) {
+                if (position++ == 1) {
+                    reordered.put(name, item);
+                }
+                reordered.put(existing.getKey(), existing.getValue());
+            }
+            reordered.putIfAbsent(name, item);
+            parent.put(key, reordered);
+        }
+    }
+
+    // Adds a named item at the end of the collection under parent.key, written
+    // as a map or as a list with "name" (left as written; a missing one is
+    // added as a list). Nothing is added if an item has this name already
+    @SuppressWarnings("unchecked")
+    static void addNamedItemLast(Map<String, Object> parent, String key, String name, Map<String, Object> item) {
+        Object collection = parent.get(key);
+        if (collection instanceof Map<?, ?> map) {
+            ((Map<String, Object>) map).putIfAbsent(name, item);
+        } else if (collection instanceof List<?> list) {
+            if (!hasNamedItem(list, name)) {
+                ((List<Object>) list).add(item);
+            }
+        } else {
+            parent.put(key, new ArrayList<>(List.of(item)));
+        }
+    }
+
+    // A list of definitions written with "name"
+    private static boolean hasNamedItem(List<?> list, String name) {
+        return list.stream().anyMatch(existing -> existing instanceof Map<?, ?> map && name.equals(map.get("name")));
+    }
+
     static Map<String, Object> actionbarOf(Map<String, Object> subApp) {
         return getChildMap(subApp, "actionbar");
     }

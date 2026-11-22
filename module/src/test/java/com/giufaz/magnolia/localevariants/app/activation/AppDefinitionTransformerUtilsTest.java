@@ -255,6 +255,64 @@ class AppDefinitionTransformerUtilsTest {
         assertEquals(map("$type", "textField"), field, "nothing added");
     }
 
+    // --- Named item after the first ---
+
+    @Test
+    void test_addNamedItemAfterFirst_inAList() {
+        Map<String, Object> view = map("columns", list(map("name", "jcrName"), map("name", "status")));
+        Object written = view.get("columns");
+
+        addNamedItemAfterFirst(view, "columns", "extra", map("name", "extra"));
+        addNamedItemAfterFirst(view, "columns", "extra", map("name", "extra"));
+
+        assertEquals(list(map("name", "jcrName"), map("name", "extra"), map("name", "status")), view.get("columns"), "once");
+        assertSame(written, view.get("columns"), "still the list");
+    }
+
+    @Test
+    void test_addNamedItemAfterFirst_inAMap() {
+        Map<String, Object> view = map("columns", map("jcrName", map(), "status", map()));
+
+        addNamedItemAfterFirst(view, "columns", "extra", map("name", "extra"));
+        addNamedItemAfterFirst(view, "columns", "extra", map("name", "other"));
+
+        Map<?, ?> columns = (Map<?, ?>) view.get("columns");
+        assertEquals(List.of("jcrName", "extra", "status"), List.copyOf(columns.keySet()));
+        assertEquals(map("name", "extra"), columns.get("extra"), "the first one is kept");
+    }
+
+    @Test
+    void test_addNamedItemAfterFirst_emptyOrMissing() {
+        Map<String, Object> emptyList = map("columns", list());
+        addNamedItemAfterFirst(emptyList, "columns", "extra", map("name", "extra"));
+        assertEquals(list(map("name", "extra")), emptyList.get("columns"));
+
+        Map<String, Object> emptyMap = map("columns", map());
+        addNamedItemAfterFirst(emptyMap, "columns", "extra", map("name", "extra"));
+        assertEquals(map("extra", map("name", "extra")), emptyMap.get("columns"));
+
+        Map<String, Object> missing = map("$type", "treeView");
+        addNamedItemAfterFirst(missing, "columns", "extra", map("name", "extra"));
+        assertEquals(map("$type", "treeView"), missing, "the definition's defaults: nothing added");
+    }
+
+    @Test
+    void test_addNamedItemLast() {
+        Map<String, Object> asList = map("filters", list(map("name", "status")));
+        addNamedItemLast(asList, "filters", "extra", map("name", "extra"));
+        addNamedItemLast(asList, "filters", "extra", map("name", "extra"));
+        assertEquals(list(map("name", "status"), map("name", "extra")), asList.get("filters"), "once");
+
+        Map<String, Object> asMap = map("filters", map("status", map()));
+        addNamedItemLast(asMap, "filters", "extra", map("name", "extra"));
+        addNamedItemLast(asMap, "filters", "extra", map("name", "other"));
+        assertEquals(map("status", map(), "extra", map("name", "extra")), asMap.get("filters"), "the first one is kept");
+
+        Map<String, Object> missing = map();
+        addNamedItemLast(missing, "filters", "extra", map("name", "extra"));
+        assertEquals(map("filters", list(map("name", "extra"))), missing, "added as a list");
+    }
+
     // Mutable and ordered, like the YAML reader's output
     static Map<String, Object> map(Object... keyValues) {
         Map<String, Object> map = new LinkedHashMap<>();
