@@ -22,9 +22,11 @@ import java.util.List;
  *                         containers, in the order of the config
  * @param recursiveRestore whether its "Restore previous version" also restores
  *                         the nodes under the restored one
+ * @param experimentalVariantDialogs whether its Vaadin dialogs and the page
+ *                         editor show a variant in one language (exploratory)
  */
 public record ResolvedLocaleVariantsAppConfig(String name, List<String> nodeTypes, List<String> variantActions,
-        List<String> containerActions, boolean recursiveRestore) {
+        List<String> containerActions, boolean recursiveRestore, boolean experimentalVariantDialogs) {
 
     public ResolvedLocaleVariantsAppConfig {
         nodeTypes = List.copyOf(nodeTypes);
@@ -39,7 +41,7 @@ public record ResolvedLocaleVariantsAppConfig(String name, List<String> nodeType
                         config.isReplaceDefaultVariantActions()),
                 resolve(defaults.getContainerActions(), config.getContainerActions(),
                         config.isReplaceDefaultContainerActions()),
-                defaults.isRecursiveRestore());
+                defaults.isRecursiveRestore(), defaults.isExperimentalVariantDialogs());
     }
 
     // The app's own list added to the defaults, or replacing them (even empty)

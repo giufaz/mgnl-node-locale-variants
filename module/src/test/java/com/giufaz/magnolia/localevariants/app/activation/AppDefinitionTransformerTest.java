@@ -661,7 +661,7 @@ class AppDefinitionTransformerTest {
         Map<String, Object> app = map("subApps", map("browser", browser("actions", map(
                 "restorePreviousVersion", map("$type", RESTORE_TYPE, "parentNodeTypeOnly", true)))));
         ResolvedLocaleVariantsAppConfig withoutRecursiveRestore = new ResolvedLocaleVariantsAppConfig("promos",
-                List.of("lvd:promo"), List.of("editItem"), List.of("activate"), false);
+                List.of("lvd:promo"), List.of("editItem"), List.of("activate"), false, false);
 
         Map<String, Object> result = transformer.transform(app, withoutRecursiveRestore);
 
@@ -732,7 +732,7 @@ class AppDefinitionTransformerTest {
 
     private static ResolvedLocaleVariantsAppConfig app(List<String> nodeTypes, List<String> variantActions,
             List<String> containerActions) {
-        return new ResolvedLocaleVariantsAppConfig("promos", nodeTypes, variantActions, containerActions, true);
+        return new ResolvedLocaleVariantsAppConfig("promos", nodeTypes, variantActions, containerActions, true, false);
     }
 
     // A browser sub-app: an action bar and a workbench, plus (or replaced by) the given parts

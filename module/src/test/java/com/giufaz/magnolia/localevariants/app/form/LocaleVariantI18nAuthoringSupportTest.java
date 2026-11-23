@@ -44,6 +44,7 @@ class LocaleVariantI18nAuthoringSupportTest {
         verifyNoInteractions(delegate);
     }
 
+    // The same when the app has locale variants but the one-language dialogs are off (the default)
     @Test
     void test_variantLocale_inAnAppWithoutLocaleVariants() throws Exception {
         Node variant = variant("variant_de");

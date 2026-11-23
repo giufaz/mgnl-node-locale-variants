@@ -70,6 +70,6 @@ class LocaleVariantsAppsDecoratorTest {
     }
 
     private static ResolvedLocaleVariantsAppConfig config(String... nodeTypes) {
-        return new ResolvedLocaleVariantsAppConfig("promos", List.of(nodeTypes), List.of("editItem"), List.of("activate"), true);
+        return new ResolvedLocaleVariantsAppConfig("promos", List.of(nodeTypes), List.of("editItem"), List.of("activate"), true, false);
     }
 }

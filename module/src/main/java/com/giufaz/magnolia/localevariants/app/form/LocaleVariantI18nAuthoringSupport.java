@@ -19,14 +19,18 @@ import org.slf4j.LoggerFactory;
 
 import com.giufaz.magnolia.localevariants.LocaleVariantStructure;
 import com.giufaz.magnolia.localevariants.app.activation.AppActivation;
+import com.giufaz.magnolia.localevariants.config.ResolvedLocaleVariantsAppConfig;
 
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
 
 /**
- * Locale variants are authored in one language in the Vaadin dialogs (e.g.
- * opened by an {@code openDialog} action) and in the page editor, which have
- * no detail sub-app to give a twin form to.
+ * Exploratory, off by default ({@code defaults.experimentalVariantDialogs} of
+ * the module config): locale variants authored in one language in the Vaadin
+ * dialogs (e.g. opened by an {@code openDialog} action) and in the page
+ * editor, which have no detail sub-app to give a twin form to. Known limits:
+ * after a variant's dialog, the original's dialog opens in the variant's
+ * language; a dialog with a node-name field renames the variant on save.
  *
  * <p>
  * For a variant, or a node under one (areas, components): one available
@@ -37,8 +41,8 @@ import jakarta.inject.Named;
  *
  * <p>
  * Mapped in the {@code subapp} component container, so every sub-app gets it,
- * but it only acts in the apps with locale variants applied (checked at every
- * call: a config change applies at once).
+ * but it only acts in the apps with locale variants applied, and only while
+ * the flag is on (checked at every call: a config change applies at once).
  */
 public class LocaleVariantI18nAuthoringSupport implements I18NAuthoringSupport<Object> {
 
@@ -46,7 +50,7 @@ public class LocaleVariantI18nAuthoringSupport implements I18NAuthoringSupport<O
 
     private final I18NAuthoringSupport<Object> delegate;
     private final LocaleVariantStructure variantStructure;
-    private final BooleanSupplier appHasLocaleVariants;
+    private final BooleanSupplier oneLanguageInDialogs;
 
     @Inject
     @SuppressWarnings("unchecked")
@@ -54,20 +58,23 @@ public class LocaleVariantI18nAuthoringSupport implements I18NAuthoringSupport<O
             LocaleVariantStructure variantStructure, ComponentProvider componentProvider,
             AppActivation appActivation) {
         this(mainComponentProvider.getComponent(I18NAuthoringSupport.class), variantStructure,
-                appHasLocaleVariants(componentProvider, appActivation));
+                oneLanguageInDialogs(componentProvider, appActivation));
     }
 
     LocaleVariantI18nAuthoringSupport(I18NAuthoringSupport<Object> delegate, LocaleVariantStructure variantStructure,
-            BooleanSupplier appHasLocaleVariants) {
+            BooleanSupplier oneLanguageInDialogs) {
         this.delegate = delegate;
         this.variantStructure = variantStructure;
-        this.appHasLocaleVariants = appHasLocaleVariants;
+        this.oneLanguageInDialogs = oneLanguageInDialogs;
     }
 
     // The app of this sub-app is resolved once, its config is read at every call
-    static BooleanSupplier appHasLocaleVariants(ComponentProvider componentProvider, AppActivation appActivation) {
+    static BooleanSupplier oneLanguageInDialogs(ComponentProvider componentProvider, AppActivation appActivation) {
         String appName = appName(componentProvider);
-        return () -> appName != null && appActivation.getAppliedApp(appName) != null;
+        return () -> {
+            ResolvedLocaleVariantsAppConfig app = appName == null ? null : appActivation.getAppliedApp(appName);
+            return app != null && app.experimentalVariantDialogs();
+        };
     }
 
     private static String appName(ComponentProvider componentProvider) {
@@ -105,7 +112,7 @@ public class LocaleVariantI18nAuthoringSupport implements I18NAuthoringSupport<O
 
     // The locale of the variant the item is, or is in, if any
     Optional<Locale> variantLocale(Object item) {
-        if (!(item instanceof Node node) || !appHasLocaleVariants.getAsBoolean()) {
+        if (!(item instanceof Node node) || !oneLanguageInDialogs.getAsBoolean()) {
             return Optional.empty();
         }
         try {

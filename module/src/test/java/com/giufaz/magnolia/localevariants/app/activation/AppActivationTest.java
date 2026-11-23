@@ -90,7 +90,7 @@ class AppActivationTest {
         clearInvocations(registry, systemEventBus);
 
         activation.applyNow(Map.of("promos", new ResolvedLocaleVariantsAppConfig("promos", List.of("lvd:promo"),
-                List.of("editItem", "export"), List.of("activate"), true)));
+                List.of("editItem", "export"), List.of("activate"), true, false)));
 
         verify(registry).setAppsDecorator(notNull());
         assertEquals(Set.of("promos"), reregisteredApps());
@@ -176,7 +176,7 @@ class AppActivationTest {
         verify(registry, timeout(3000)).setAppsDecorator(notNull());
         verify(registry, after(1500).times(1)).setAppsDecorator(any());
         assertEquals(new ResolvedLocaleVariantsAppConfig("promos", List.of("lvd:promo"), List.of("editItem"),
-                List.of("export"), true), activation.getAppliedApp("promos"));
+                List.of("export"), true, false), activation.getAppliedApp("promos"));
     }
 
     // Only the eligible apps are decorated: enabled, with node types
@@ -215,9 +215,9 @@ class AppActivationTest {
         Map<String, ResolvedLocaleVariantsAppConfig> resolved = AppActivation.resolveEligibleApps(apps, defaults);
 
         assertEquals(new ResolvedLocaleVariantsAppConfig("promos", List.of("lvd:promo"), List.of("editItem", "editPromo"),
-                List.of("activate"), true), resolved.get("promos"));
+                List.of("activate"), true, false), resolved.get("promos"));
         assertEquals(new ResolvedLocaleVariantsAppConfig("ctas", List.of("lvd:cta"), List.of("editItem"),
-                List.of("exportCta"), true), resolved.get("ctas"));
+                List.of("exportCta"), true, false), resolved.get("ctas"));
     }
 
     private Set<String> reregisteredApps() {
@@ -231,7 +231,7 @@ class AppActivationTest {
     // Mutable, with the same action lists for every app
     private static Map<String, ResolvedLocaleVariantsAppConfig> apps(String name, String... nodeTypes) {
         Map<String, ResolvedLocaleVariantsAppConfig> apps = new LinkedHashMap<>();
-        apps.put(name, new ResolvedLocaleVariantsAppConfig(name, List.of(nodeTypes), List.of("editItem"), List.of("activate"), true));
+        apps.put(name, new ResolvedLocaleVariantsAppConfig(name, List.of(nodeTypes), List.of("editItem"), List.of("activate"), true, false));
         return apps;
     }
 

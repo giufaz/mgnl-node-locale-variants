@@ -63,10 +63,22 @@ class ResolvedLocaleVariantsAppConfigTest {
         assertFalse(ResolvedLocaleVariantsAppConfig.of("promos", config("lvd:promo"), defaults).recursiveRestore());
     }
 
+    // From the defaults: off unless the config switches it on
+    @Test
+    void test_of_experimentalVariantDialogs() {
+        ActionDefaults defaults = new ActionDefaults();
+        assertFalse(ResolvedLocaleVariantsAppConfig.of("promos", config("lvd:promo"), defaults)
+                .experimentalVariantDialogs());
+
+        defaults.setExperimentalVariantDialogs(true);
+        assertTrue(ResolvedLocaleVariantsAppConfig.of("promos", config("lvd:promo"), defaults)
+                .experimentalVariantDialogs());
+    }
+
     @Test
     void test_allows() {
         ResolvedLocaleVariantsAppConfig app = new ResolvedLocaleVariantsAppConfig("promos", List.of("lvd:promo"),
-                List.of("editItem"), List.of("activate"), true);
+                List.of("editItem"), List.of("activate"), true, false);
 
         assertTrue(app.allowsOnVariant("editItem"));
         assertFalse(app.allowsOnVariant("activate"), "allowed on containers only");
@@ -81,7 +93,7 @@ class ResolvedLocaleVariantsAppConfigTest {
         List<String> variantActions = new ArrayList<>(List.of("editItem"));
         List<String> containerActions = new ArrayList<>(List.of("activate"));
         ResolvedLocaleVariantsAppConfig app = new ResolvedLocaleVariantsAppConfig("promos", nodeTypes, variantActions,
-                containerActions, true);
+                containerActions, true, false);
 
         nodeTypes.add("lvd:other");
         variantActions.add("duplicate");
@@ -106,7 +118,7 @@ class ResolvedLocaleVariantsAppConfigTest {
 
     private static ResolvedLocaleVariantsAppConfig app(String name, String nodeType, String variantAction,
             String containerAction) {
-        return new ResolvedLocaleVariantsAppConfig(name, List.of(nodeType), List.of(variantAction), List.of(containerAction), true);
+        return new ResolvedLocaleVariantsAppConfig(name, List.of(nodeType), List.of(variantAction), List.of(containerAction), true, false);
     }
 
     private static LocaleVariantsAppConfig config(String... nodeTypes) {

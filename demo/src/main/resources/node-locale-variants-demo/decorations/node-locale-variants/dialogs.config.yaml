@@ -1,0 +1,4 @@
+# Demo: the exploratory one-language dialogs are on, for the banner CTA's dialog and for the Pages app
+# (page properties, page editor)
+defaults:
+  experimentalVariantDialogs: true
