@@ -133,21 +133,7 @@ Things to know:
 
 ## How it works
 
-```mermaid
-flowchart LR
-    subgraph Author["AdminCentral (author)"]
-        config["Module config<br/>apps + defaults"] --> decorate["Enabled apps are decorated<br/>action, column, filter, guards, one-language form"]
-        decorate --> editor["Editor: Add language variant"]
-        editor --> jcr[("JCR<br/>original / localeVariants / variant_de")]
-    end
-    jcr -- publish --> pub[("JCR (public)")]
-    subgraph Delivery["Delivery API v2"]
-        request["GET ...?lang=de"] --> endpoint["Magnolia endpoint<br/>reads the original"]
-        endpoint --> filter["Response filter<br/>swaps in variant_de, also in references"]
-    end
-    pub --> endpoint
-    filter --> json["JSON of the variant"]
-```
+![How it works: the module config decorates the enabled apps, an editor adds variants, which are published as nodes; on the public instance a response filter swaps the variant into what the Delivery endpoint found](docs/images/how-it-works.png)
 
 Three parts, independent of each other:
 

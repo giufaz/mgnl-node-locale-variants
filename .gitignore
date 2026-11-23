@@ -4,9 +4,6 @@ target/
 .idea/
 .vscode/
 
-# Local dev scripts, never committed
-devtools/
-
 # Integration tests: reports of the runs, the test instance's data, Karate's temporary files
 integration-tests/reports/
 integration-tests/.work/
