@@ -15,6 +15,9 @@
     <dependency>
       <name>pages-jcr-rest</name>
     </dependency>
+    <dependency>
+      <name>spa-rendering</name>
+    </dependency>
   </dependencies>
 
   <repositories>

@@ -1,0 +1,55 @@
+# Hand-written app on the promos workspace, left out of the module config on purpose: it stays as Magnolia builds it
+# (no "Add language variant", variants containers hidden), although its items have variants
+class: info.magnolia.ui.contentapp.configuration.ContentAppDescriptor
+appClass: info.magnolia.ui.framework.app.BaseApp
+label: Promos, not enabled (locale variants demo)
+icon: icon-app
+datasource:
+  $type: jcrDatasource
+  workspace: promos
+  allowedNodeTypes:
+    - mgnl:folder
+    - lvd:promo
+subApps:
+  browser:
+    class: info.magnolia.ui.contentapp.configuration.BrowserDescriptor
+    label: Promos
+    actions:
+      rename:
+        label: Rename promo
+        icon: icon-edit
+        $type: openDialogAction
+        dialogId: ui-framework-jcr:rename
+        availability:
+          writePermissionRequired: true
+          nodeTypes: [lvd:promo]
+      export:
+        label: Export promo
+        icon: icon-export
+        $type: exportAction
+        format: YAML
+        availability:
+          nodeTypes: [lvd:promo]
+    actionbar:
+      sections:
+        item:
+          availability:
+            nodeTypes: [lvd:promo]
+          groups:
+            editActions:
+              items:
+                rename: {}
+                export: {}
+    workbench:
+      contentViews:
+        tree:
+          $type: treeView
+          columns:
+            jcrName:
+              $type: jcrTitleColumn
+              expandRatio: 2
+            jcrPublishingStatus:
+              $type: statusColumn
+permissions:
+  roles:
+    superuser: superuser

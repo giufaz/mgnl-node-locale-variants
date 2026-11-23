@@ -30,6 +30,12 @@
       <artifactId>magnolia-rest-integration</artifactId>
       <scope>provided</scope>
     </dependency>
+    <!-- DemoFrontEndRouter (demo front end in the page editor): in the Magnolia webapp -->
+    <dependency>
+      <groupId>info.magnolia.pages</groupId>
+      <artifactId>magnolia-spa-rendering</artifactId>
+      <scope>provided</scope>
+    </dependency>
     <dependency>
       <groupId>org.apache.groovy</groupId>
       <artifactId>groovy</artifactId>

@@ -1,0 +1,8 @@
+# Dialog of the demo's text component ("Add component" / "Edit component" in the page editor)
+label: Text
+form:
+  properties:
+    text:
+      $type: textField
+      label: Text
+      i18n: true

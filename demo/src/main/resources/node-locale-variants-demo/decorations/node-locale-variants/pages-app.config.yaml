@@ -1,0 +1,10 @@
+# Demo: locale variants in Magnolia's Pages app, with the preset shipped by the module (off by default).
+# Only in the demo, to show what happens with a page under a page variant: "Add page" (add) is allowed on variants.
+# A decoration replaces a list item by item, it doesn't add to it: the whole list of the preset is repeated
+apps:
+  pages-app:
+    enabled: true
+    variantActions: [preview, edit, editPage, publish, unpublish, export,
+                     confirmMarkDeletion, markDeleted, deletePermanently, publishDeletion,
+                     versionShow, versionRestore, restorePreviousVersion, showPreviousVersion,
+                     add]

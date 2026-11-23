@@ -1,7 +1,14 @@
-# SPA page template with one area, for the pages endpoint
+# SPA page template with one area, for the pages endpoint. Rendered by the demo's front end
+# (webresources/frontend/index.html), which this Magnolia instance serves itself: see DemoFrontEndRouter
 title: Basic page
+dialog: node-locale-variants-demo:pageProperties
 renderType: spa
 class: info.magnolia.rendering.spa.renderer.SpaRenderableDefinition
+spaRouterClass: com.giufaz.magnolia.localevariants.demo.DemoFrontEndRouter
+routeTemplate: '?path={{@path}}&lang={language}'
 areas:
   main:
     title: Main
+    availableComponents:
+      text:
+        id: node-locale-variants-demo:components/text

@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<!--
+  Front end of the demo, in one file and without a build: shows a page of the demo's template (title and text
+  components) from the pages Delivery endpoint, and works in the page editor.
+  Opened as index.html?path=<page path>&lang=<language> (see templates/pages/basic.yaml).
+-->
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Node Locale Variants demo</title>
+  <style>body { font-family: sans-serif; margin: 2rem; }</style>
+</head>
+<body>
+<h1 id="title"></h1>
+<main id="main"></main>
+<script>
+  (async () => {
+    // Served by Magnolia itself: the same origin and context path as the REST endpoints
+    const magnolia = location.pathname.split('/.resources/')[0];
+    const query = new URLSearchParams(location.search);
+    const path = query.get('path');
+    // The page editor adds mgnlPreview=false; the preview adds mgnlPreview=true
+    const inEditor = query.get('mgnlPreview') === 'false';
+    const json = async url => (await fetch(magnolia + url)).json();
+
+    // The editor's parameters go to the Delivery endpoint too: it then knows the request comes from the editor
+    query.delete('path');
+    const page = await json('/.rest/delivery/pages' + path + '?' + query);
+    // What the page editor needs to know about the page, its areas and components, by node path
+    const annotations = inEditor ? await json('/.rest/template-annotations/v1' + path) : {};
+
+    // The page editor finds what is editable by HTML comments around it: <!-- cms:area ... --> ... <!-- /cms:area -->
+    const editable = (parent, node, render) => {
+      const annotation = annotations[node['@path']];
+      if (annotation) parent.append(document.createComment(' ' + annotation + ' '));
+      render();
+      if (annotation) parent.append(document.createComment(' /' + annotation.split(' ')[0] + ' '));
+    };
+
+    editable(document.head, page, () => {});
+    document.getElementById('title').textContent = page.title || '';
+    const main = document.getElementById('main');
+    if (page.main) {
+      editable(main, page.main, () => (page.main['@nodes'] || []).forEach(name => {
+        const component = page.main[name];
+        editable(main, component, () => {
+          const text = document.createElement('p');
+          text.className = 'text';
+          text.textContent = component.text || '';
+          main.append(text);
+        });
+      }));
+    }
+    // The page editor reads the comments and draws its edit bars
+    if (inEditor && window.parent.mgnlRefresh) window.parent.mgnlRefresh();
+  })();
+</script>
+</body>
+</html>

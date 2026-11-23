@@ -1,0 +1,16 @@
+# Page properties of the demo's page template ("Edit page properties" in the Pages app)
+label: Page properties
+form:
+  properties:
+    title:
+      $type: textField
+      label: Title
+      i18n: true
+    navigationTitle:
+      $type: textField
+      label: Navigation title
+      i18n: true
+    hideInNav:
+      $type: checkBoxField
+      label: Navigation
+      buttonLabel: Hide in navigation
