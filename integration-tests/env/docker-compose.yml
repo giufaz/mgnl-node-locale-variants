@@ -1,0 +1,32 @@
+# Magnolia CE (author + public in one Tomcat) for the integration tests. Started by ../run.sh.
+# The image is built locally from Magnolia's public Nexus (image/Dockerfile): no prebuilt image needed.
+name: lv-it
+services:
+  magnolia:
+    build:
+      context: ./image
+      args:
+        BASE_IMAGE: tomcat:10.1-jdk17-temurin
+        MGNL_VERSION: ${MGNL_VERSION:-6.4.10}
+        MGNL_FLAVOR: ce
+    image: lv-it/magnolia-ce:${MGNL_VERSION:-6.4.10}
+    container_name: mgnl-lv-it
+    user: "${IT_UID:-1000}:${IT_GID:-1000}"
+    ports:
+      - "${MGNL_PORT:-8064}:8080"
+    entrypoint: ["/lvenv/entrypoint.sh"]
+    command: ["catalina.sh", "run"]
+    environment:
+      MGNL_UPDATE_AUTO: "true"
+      MGNL_JCR: h2
+      MGNL_DEVELOP: "false"
+      MGNL_LOG_UPDATES: "true"
+      MGNL_EXTRA_PROPERTIES: magnolia.config.locations=/data/mp
+      MGNL_SUPERUSER_PASSWORD: ${MGNL_SUPERUSER_PASSWORD:-superuser}
+      JAVA_XMS: 512m
+      JAVA_XMX: ${JAVA_XMX:-3g}
+    volumes:
+      - ${IT_DATA_DIR}:/data
+      - ${IT_ENV_DIR}:/lvenv:ro
+    mem_limit: 5g
+    stop_grace_period: 120s

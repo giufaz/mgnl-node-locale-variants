@@ -1,0 +1,21 @@
+    <!-- sandbox: make module install/update visible. ModuleManagerImpl logs at DEBUG
+         "Install/update for {} is starting: {}" (per module + delta list) and
+         "Module {}, executing {}" (per task). additivity=true -> also on console/docker logs. -->
+    <Logger name="info.magnolia.module.ModuleManagerImpl" level="DEBUG" additivity="true">
+      <AppenderRef ref="log-update"/>
+    </Logger>
+    <Logger name="info.magnolia.module.InstallContextImpl" level="DEBUG" additivity="true">
+      <AppenderRef ref="log-update"/>
+    </Logger>
+    <Logger name="info.magnolia.module.AbstractModuleVersionHandler" level="DEBUG" additivity="true">
+      <AppenderRef ref="log-update"/>
+    </Logger>
+    <Logger name="info.magnolia.module.delta" level="INFO" additivity="true">
+      <AppenderRef ref="log-update"/>
+    </Logger>
+    <Logger name="info.magnolia.module.ui" level="INFO" additivity="true">
+      <AppenderRef ref="log-update"/>
+    </Logger>
+    <Logger name="info.magnolia.init" level="INFO" additivity="true">
+      <AppenderRef ref="log-update"/>
+    </Logger>

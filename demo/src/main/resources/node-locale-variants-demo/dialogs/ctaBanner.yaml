@@ -13,14 +13,3 @@ form:
     url:
       $type: textField
       label: URL
-actions:
-  commit:
-    $type: commitAction
-  cancel:
-    $type: closeAction
-footerLayout:
-  $type: defaultEditorActionLayout
-  primaryActions:
-    commit: commit
-  secondaryActions:
-    cancel: cancel

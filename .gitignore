@@ -7,5 +7,7 @@ target/
 # Local dev scripts, never committed
 devtools/
 
-# Local integration tests, not versioned for now
-integration-tests/
+# Integration tests: reports of the runs, the test instance's data, Karate's temporary files
+integration-tests/reports/
+integration-tests/.work/
+integration-tests/features/target/

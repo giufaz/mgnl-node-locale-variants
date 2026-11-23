@@ -1,0 +1,4 @@
+    <!-- sandbox: dedicated log of module install/update (version handlers, deltas, tasks) -->
+    <File name="log-update" fileName="${magnolia.logs.dir}/magnolia-update.log" append="true">
+      <PatternLayout pattern="%d{ISO8601} %-5p %c{1.}: %encode{%m}{CRLF}%n"/>
+    </File>
