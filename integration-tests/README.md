@@ -12,7 +12,8 @@ Needs only Docker: both images are built on first use, Magnolia from Magnolia's 
 
 | Path | Content |
 |---|---|
-| `run.sh` | The whole run (env: `MGNL_PORT`, `MGNL_VERSION`, `MGNL_SUPERUSER_PASSWORD`, `MVN`, `KARATE_VERSION`) |
+| `run.sh` | The whole run (env: `MGNL_PORT`, `MGNL_VERSION`, `MGNL_SUPERUSER_PASSWORD`, `MVN`, `KARATE_VERSION`, `WARMUP_TIMEOUT`) |
+| `warmup/warmup.feature` | Run before the scenarios: opens a first app in the AdminCentral of the Magnolia that has just started, which is slow. If it can't within `WARMUP_TIMEOUT` seconds (240), the run stops there and says so |
 | `env/` | Docker Compose, Magnolia image and entrypoint (installs the module jar in author and public), Karate image, Maven in Docker (`mvn.sh`) |
 | `features/seed.groovy` | Test content (demo pages and promos) made with the module's own components, on author and public |
 | `features/*.feature` | The module's features: what it adds (`@ui`: in the AdminCentral, with Karate's browser driver) |

@@ -47,6 +47,28 @@ function fn() {
     }
   };
 
+  // For warmup/warmup.feature: logs in and opens an app, trying again until it works or the seconds are over
+  // (then it fails). A Magnolia that has just started answers the first login and the first app slowly
+  ui.warmUp = function (seconds) {
+    var deadline = java.lang.System.currentTimeMillis() + seconds * 1000;
+    var attempt = 0;
+    while (true) {
+      attempt++;
+      try {
+        ui.login();
+        d().script('window.location.hash = ' + str('app:promos:browser;/:treeview:'));
+        d().waitUntil("!!document.querySelector('.v-actionbar') && document.querySelectorAll('tr.v-treegrid-row').length > 0");
+        karate.log('AdminCentral is warm (attempt ' + attempt + ')');
+        return;
+      } catch (e) {
+        karate.log('AdminCentral is still warming up (attempt ' + attempt + '): ' + e);
+        if (java.lang.System.currentTimeMillis() > deadline) {
+          karate.fail('the AdminCentral did not open an app within ' + seconds + ' seconds');
+        }
+      }
+    }
+  };
+
   // Opens the browser sub-app of app at path, through the URL fragment (the AdminCentral follows it; a page load would
   // not change app). The tree expands to the item and selects it: done when the selected row is at the path's depth
   // (each scenario logs in anew, and the steps of a scenario always change depth).
