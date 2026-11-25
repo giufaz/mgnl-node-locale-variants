@@ -1,0 +1,45 @@
+/* Shared style of the architecture-*.html diagrams (sources of the PNGs in docs/module-architecture.md). */
+:root { --ink: #1f2933; --soft: #52606d; --line: #9aa5b1; --panel: #f5f7fa; --border: #d9e2ec;
+        --accent: #0b7a5c; --accent-bg: #e3f6ef; --accent-border: #7fcfb4; }
+* { box-sizing: border-box; }
+body { margin: 0; background: #fff; color: var(--ink); font: 13px/1.4 "Liberation Sans", Arial, Helvetica, sans-serif; }
+#diagram { width: 880px; padding: 18px; background: #fff; }
+.panel { background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 12px 16px 16px; }
+.panel + .panel { margin-top: 14px; }
+.panel h2 { margin: 0 0 14px; font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--soft); }
+.panel h2 b { color: var(--ink); }
+.row { display: grid; grid-template-columns: minmax(0,1fr) 46px minmax(0,1fr) 46px minmax(0,1fr) 46px minmax(0,1fr); align-items: stretch; }
+.box { position: relative; background: #fff; border: 1.5px solid var(--line); border-radius: 9px; padding: 10px 11px; }
+.box.module { background: var(--accent-bg); border-color: var(--accent-border); }
+.box h3 { margin: 0 0 4px; font-size: 13.5px; }
+.box h3.cls { font-size: 12.5px; }
+.box p { margin: 0; color: #323f4b; font-size: 12.5px; }
+.box p + p { margin-top: 5px; }
+.box code { font: 11.5px/1.45 "DejaVu Sans Mono", "Liberation Mono", monospace; color: var(--ink); }
+.box code.nw { white-space: nowrap; }
+.box code.v { color: var(--accent); font-weight: bold; }
+.badge { position: absolute; top: -10px; left: -10px; width: 22px; height: 22px; border-radius: 50%;
+         background: var(--ink); color: #fff; font-weight: bold; font-size: 12.5px; line-height: 22px; text-align: center; }
+.arrow { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; }
+svg { display: block; }
+.s { fill: none; stroke: #52606d; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.lbl { font: 12px "Liberation Sans", Arial, sans-serif; fill: #52606d; }
+.legend { display: flex; align-items: center; gap: 8px; margin-top: 12px; color: var(--soft); font-size: 12px; }
+.legend i { width: 14px; height: 14px; border-radius: 4px; background: var(--accent-bg); border: 1.5px solid var(--accent-border); }
+.legend i.plain { background: #fff; border-color: var(--line); margin-left: 14px; }
+.stack { display: grid; grid-template-rows: 1fr 1fr; gap: 16px; }
+.center { align-self: center; }
+.k { display: inline-block; min-width: 78px; font: bold 10px "Liberation Sans", Arial, sans-serif; letter-spacing: .07em; text-transform: uppercase; color: var(--soft); }
+.box h3 code { font-weight: bold; font-size: 12.5px; }
+/* Decision diagrams: a dark question, bold answers on the branches, short results */
+.ask { align-self: center; background: var(--accent); color: #fff; border-radius: 12px; padding: 14px 14px; text-align: center; }
+.ask b { display: block; font-size: 15.5px; line-height: 1.3; }
+.ask span { display: block; margin-top: 9px; font-size: 11.5px; color: #d5f2e8; }
+.ask code { display: inline-block; margin-top: 4px; padding: 3px 7px; border-radius: 5px; background: rgba(255,255,255,.16); color: #fff; font: 11px/1.35 "DejaVu Sans Mono", "Liberation Mono", monospace; }
+.start { align-self: center; text-align: center; }
+.start .k { display: block; min-width: 0; margin-bottom: 3px; }
+.start h3 { margin: 0; font-size: 15px; }
+.big h3 { font-size: 15px; margin-bottom: 6px; }
+.big p { font-size: 13px; }
+.big ul { margin: 0; padding-left: 17px; color: var(--ink); font-size: 13px; line-height: 1.55; }
+.ans { font: bold 13px "Liberation Sans", Arial, sans-serif; fill: #1f2933; }

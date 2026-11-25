@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<!-- Source of architecture-data-model.png (docs/module-architecture.md). Render it at 880px wide, scale 2. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Data model</title>
+<link rel="stylesheet" href="architecture.css">
+</head>
+<body>
+<div id="diagram">
+  <div class="panel">
+    <h2><b>JCR</b> · one item with two locale variants</h2>
+    <div class="row" style="grid-template-columns: minmax(0,1.1fr) 46px minmax(0,1.1fr) 64px minmax(0,1.25fr);">
+      <div class="box center">
+        <h3><span class="k">node</span> <code>summer-sale</code></h3>
+        <p><span class="k">type</span> <code>myproject:promo</code></p>
+        <p><span class="k">properties</span> <code>title</code>, <code>title_de</code>, …</p>
+        <p><b>The original.</b> A node of your project: a page, a content item.</p>
+      </div>
+      <div class="arrow"><svg width="24" height="14" viewBox="2 0 26 14"><path class="s" d="M2 7h24M20 2l6 5-6 5"/></svg></div>
+      <div class="box module center">
+        <h3><span class="k">node</span> <code>localeVariants</code></h3>
+        <p><span class="k">type</span> <code>lv:localeVariants</code></p>
+        <p><b>The container.</b> Fixed name, own type. Published and versioned on its own, apart from the original.</p>
+      </div>
+      <div class="arrow"><svg width="64" height="340" viewBox="0 0 64 340"><path class="s" d="M2 170h28M30 81v178M30 81h30M54 76l6 5-6 5M30 259h30M54 254l6 5-6 5"/></svg></div>
+      <div class="stack" style="height: 340px;">
+        <div class="box module">
+          <h3><span class="k">node</span> <code class="v">variant_de</code></h3>
+          <p><span class="k">type</span> <code>myproject:promo</code></p>
+          <p><span class="k">mixin</span> <code>lv:localeVariant</code></p>
+          <p><span class="k">properties</span> <code>title</code> (in German)</p>
+          <p><b>A variant.</b> The type of its original; its language is in its name.</p>
+        </div>
+        <div class="box module">
+          <h3><span class="k">node</span> <code class="v">variant_de_CH</code></h3>
+          <p><span class="k">type</span> <code>myproject:promo</code></p>
+          <p><span class="k">mixin</span> <code>lv:localeVariant</code></p>
+          <p><span class="k">properties</span> <code>title</code> (in Swiss German)</p>
+          <p>One variant per language, as many as the site has locales.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="legend"><i></i>added by the module<i class="plain"></i>Magnolia and your project, unchanged</div>
+</div>
+</body>
+</html>

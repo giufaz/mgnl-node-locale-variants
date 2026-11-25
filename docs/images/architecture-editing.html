@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<!-- Source of architecture-editing.png (docs/module-architecture.md). Render it at 880px wide, scale 2. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Editing a variant</title>
+<link rel="stylesheet" href="architecture.css">
+</head>
+<body>
+<div id="diagram">
+  <div class="panel">
+    <h2><b>Detail sub-app</b> · which form an item gets</h2>
+    <div class="row" style="grid-template-columns: minmax(0,.7fr) 46px minmax(0,1.25fr) 76px minmax(0,1.4fr);">
+      <div class="box start">
+        <span class="k">Editor</span>
+        <h3>Opens an item</h3>
+      </div>
+      <div class="arrow"><svg width="24" height="14" viewBox="2 0 26 14"><path class="s" d="M2 7h24M20 2l6 5-6 5"/></svg></div>
+      <div class="ask">
+        <b>Is the item a&nbsp;variant?</b>
+        <span>asked by<br><code>LocaleVariantAwareDetailSubApp</code></span>
+      </div>
+      <div class="arrow"><svg width="76" height="200" viewBox="0 0 76 200"><path class="s" d="M2 100h22M24 48v104M24 48h48M66 43l6 5-6 5M24 152h48M66 147l6 5-6 5"/><text class="ans" x="34" y="40">no</text><text class="ans" x="33" y="144">yes</text></svg></div>
+      <div class="stack" style="height: 200px;">
+        <div class="box big">
+          <h3>The app's own form</h3>
+          <ul><li>every language</li><li>node name editable</li></ul>
+        </div>
+        <div class="box module big">
+          <h3>The twin form <code>&lt;subApp&gt;_lvTwin</code></h3>
+          <ul><li>one language, saved to <code>title</code></li><li>node name read-only</li></ul>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="legend"><i></i>added by the module<i class="plain"></i>Magnolia and your project, unchanged</div>
+</div>
+</body>
+</html>
