@@ -1,0 +1,4 @@
+# Demo: locale variants in the hand-written app "promosNested" (a form with nested i18n fields), with the default action lists
+apps:
+  promosNested:
+    nodeTypes: [lvd:promo]

@@ -200,12 +200,19 @@ function fn() {
   ui.selectComponent = function (text) {
     clickInFrontEnd("Array.from(doc.querySelectorAll('p.text')).find(function (e) { return e.innerText.trim() === " + str(text) + "; })");
   };
-  // Picks an option of the n-th drop-down (from 0) of the open dialog
+  // Picks an option of the n-th drop-down (from 0) of the open dialog: the option with this text, or the one that
+  // starts with it followed by a space (a version is listed as "1.0 (date) (user)")
   ui.dialogSelect = function (index, option) {
     d().script("(function () { document.querySelectorAll('[data-lv-it-select]').forEach(function (e) { e.removeAttribute('data-lv-it-select'); });"
         + " document.querySelectorAll('.v-window .v-filterselect .v-filterselect-button')[" + index + "].setAttribute('data-lv-it-select', '1'); })()");
     d().mouse('[data-lv-it-select]').click();
-    clickVisible('.v-filterselect-suggestpopup .gwt-MenuItem', option);
+    var items = '.v-filterselect-suggestpopup .gwt-MenuItem';
+    d().waitUntil("!!document.querySelector('" + items + "')");
+    var all = texts(items), label = option;
+    for (var i = 0; i < all.length; i++) {
+      if (all[i] === option || all[i].indexOf(option + ' ') === 0) { label = all[i]; break; }
+    }
+    clickVisible(items, label);
     karate.pause(500);
   };
 
@@ -374,8 +381,16 @@ function fn() {
   ui.formType = function (field, value) {
     inWarpFrame(function () {
       d().script('(function () { var e = document.getElementById(' + str(field) + '); e.focus(); e.select(); })()');
-      d().input('#' + field, value);
+      d().input("[id='" + field + "']", value); // an id can have dots: links.0.linkLabel
     });
+  };
+  // Clicks the n-th "Add" button (from 0, top to bottom) of the detail form: a new entry in a multi field
+  ui.formAdd = function (index) {
+    inWarpFrame(function () {
+      d().script("Array.from(document.querySelectorAll('button')).filter(function (e) { return e.offsetParent !== null"
+          + " && e.innerText.trim() === 'Add'; })[" + index + "].click()");
+    });
+    karate.pause(800);
   };
   // true if the field of the detail form can't be changed
   ui.formReadOnly = function (field) {
@@ -394,6 +409,16 @@ function fn() {
     return inWarpFrame(function () {
       return d().script("Array.from(document.querySelectorAll('select option')).map(function (e) { return e.innerText.trim(); })");
     });
+  };
+  // Picks a language in the detail form's language switch
+  ui.formSelectLanguage = function (language) {
+    inWarpFrame(function () {
+      d().script("(function () { var s = Array.from(document.querySelectorAll('select')).find(function (e) {"
+          + " return Array.from(e.options).some(function (o) { return o.innerText.trim() === " + str(language) + "; }); });"
+          + " s.setAttribute('data-lv-it-language', '1'); })()");
+      d().select('[data-lv-it-language]', '{}' + language);
+    });
+    karate.pause(3000);
   };
   ui.formSave = function () {
     inWarpFrame(function () { d().script(frameButton('Save changes') + '.click()'); });

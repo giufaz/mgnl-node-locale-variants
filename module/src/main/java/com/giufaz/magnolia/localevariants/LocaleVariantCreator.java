@@ -37,7 +37,8 @@ import jakarta.inject.Inject;
  * ({@code mgnl:*} except {@code mgnl:template}).</li>
  * <li>Mono-lingual: the value of the variant's locale replaces the base value ({@code title_de_CH},
  * else {@code title_de}, else {@code title}); every {@code *_<site locale>} property is dropped.
- * A localized child ({@code address_de}) replaces the base one as is.</li>
+ * A localized child ({@code address_de}) replaces the base one ({@code address}, dropped with everything
+ * under it), and the same rules go on inside it.</li>
  * </ul>
  * A project can replace this component in the module descriptor to change the copy rules.
  */
@@ -96,8 +97,8 @@ public class LocaleVariantCreator {
         return container;
     }
 
-    // Properties and children of source into target; localization null = as is
-    // (inside a localized child)
+    // Properties and children of source into target, in the variant's language at
+    // every level
     private void copy(Node source, Node target, Localization localization) throws RepositoryException {
         for (NodeType mixin : source.getMixinNodeTypes()) {
             if (!target.isNodeType(mixin.getName())) {
@@ -129,18 +130,15 @@ public class LocaleVariantCreator {
         for (Map.Entry<String, Node> entry : localize(children, localization).entrySet()) {
             Node child = entry.getValue();
             Node copy = target.addNode(entry.getKey(), child.getPrimaryNodeType().getName());
-            // A localized child replaces the base one as is; a base child follows the same
-            // rules
-            copy(child, copy, child.getName().equals(entry.getKey()) ? localization : null);
+            // The same rules inside every child, also one that replaced its base child
+            // (links0_de holds linkLabel and linkLabel_de)
+            copy(child, copy, localization);
         }
     }
 
     // Base name → item to copy: the first localized item of the chain, else the
     // base item; every localized item dropped
     private static <T> Map<String, T> localize(Map<String, T> items, Localization localization) {
-        if (localization == null) {
-            return items;
-        }
         Set<String> bases = new LinkedHashSet<>();
         items.keySet().forEach(name -> bases.add(localization.baseName(name).orElse(name)));
         Map<String, T> result = new LinkedHashMap<>();

@@ -269,6 +269,46 @@ Feature: Magnolia's own actions work on locale variants and on variants containe
     * match ui.dialogText() contains 'Restore version'
     * ui.screenshot()
 
-  # PLANNED: pick a version in these dialogs (Vaadin combo box helper), then
-  # Scenario: "Restore version" brings back the variant's earlier content, and it is still the "de" variant
-  # Scenario: "Show versions" opens the variant's earlier version read-only (with the forms piece)
+  Scenario: "Restore version" brings back the variant's earlier content, and it is still the "de" variant
+    # First version: the variant as seeded, published
+    Given url promos + '/promo-version-restore/localeVariants/variant_de'
+    When method get
+    Then status 200
+    * def seededTitle = property(response, 'title')
+    * ui.openBrowser('promos', '/promo-version-restore')
+    * ui.clickAction('Publish incl. subnodes')
+    Given url publicPromos + '/promo-version-restore/localeVariants/variant_de'
+    And retry until responseStatus == 200
+    When method get
+    Then status 200
+    # Second version: the title changed in the form, published again
+    * ui.openBrowser('promos', '/promo-version-restore/localeVariants/variant_de')
+    * ui.clickAction('Edit item')
+    * ui.formType('title', 'Changed')
+    * ui.formSave()
+    * ui.openBrowser('promos', '/promo-version-restore/localeVariants/variant_de')
+    * ui.clickAction('Publish')
+    Given url publicPromos + '/promo-version-restore/localeVariants/variant_de'
+    And retry until responseStatus == 200 && property(response, 'title')[0] == 'Changed'
+    When method get
+    Then status 200
+    # Restored to the first version
+    * ui.openBrowser('promos', '/promo-version-restore/localeVariants/variant_de')
+    * ui.clickAction('Restore version')
+    * match ui.dialogText() contains 'Restore version'
+    * ui.dialogSelect(0, '1.0')
+    * ui.screenshot()
+    * ui.clickDialogButton('Restore')
+    * ui.waitForDialogClosed()
+    Given url promos + '/promo-version-restore/localeVariants/variant_de?includeMetadata=true'
+    And retry until property(response, 'title')[0] != 'Changed'
+    When method get
+    Then status 200
+    * match property(response, 'title') == seededTitle
+    * match response.name == 'variant_de'
+    * match property(response, 'jcr:mixinTypes') contains 'lv:localeVariant'
+    # The original and the container are untouched, and the variant is still offered as one in the app
+    * ui.openBrowser('promos', '/promo-version-restore/localeVariants/variant_de')
+    * match ui.selectedCell('Localized') == 'de'
+
+  # PLANNED: Scenario: "Show versions" opens the variant's earlier version read-only (with the forms piece)

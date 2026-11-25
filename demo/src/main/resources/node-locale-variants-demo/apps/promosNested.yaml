@@ -1,0 +1,159 @@
+# Hand-written app on the promos workspace whose form has i18n fields at every level of nesting: in a composite field
+# stored on a child node, in a multi field of composite fields, three levels deep, and in a switchable field.
+# It shows that a variant's form is in one language at every level.
+class: info.magnolia.ui.contentapp.configuration.ContentAppDescriptor
+appClass: info.magnolia.ui.framework.app.BaseApp
+label: Promos, nested fields (locale variants demo)
+icon: icon-app
+datasource:
+  $type: jcrDatasource
+  workspace: promos
+  allowedNodeTypes:
+    - mgnl:folder
+    - lvd:promo
+subApps:
+  browser:
+    class: info.magnolia.ui.contentapp.configuration.BrowserDescriptor
+    label: Promos
+    actions:
+      editItem:
+        label: Edit promo
+        icon: icon-edit
+        $type: openDetailSubappAction
+        appName: promosNested
+        subAppName: detail
+        viewType: edit
+        availability:
+          writePermissionRequired: true
+          nodeTypes: [lvd:promo]
+    actionbar:
+      sections:
+        - name: item
+          availability:
+            nodeTypes: [lvd:promo]
+          groups:
+            editActions:
+              items:
+                - name: editItem
+    workbench:
+      contentViews:
+        - name: tree
+          $type: treeView
+          columns:
+            - name: jcrName
+              $type: jcrTitleColumn
+              expandRatio: 2
+            - name: jcrPublishingStatus
+              $type: statusColumn
+  detail:
+    class: info.magnolia.ui.contentapp.detail.DetailDescriptor
+    label: Promo with nested fields
+    itemProvider:
+      $type: jcrNodeFromLocationProvider
+      workspace: promos
+      nodeType: lvd:promo
+    actions:
+      commit:
+        $type: commitAction
+      cancel:
+        $type: closeAction
+    form:
+      properties:
+        title:
+          $type: textField
+          label: Title
+          i18n: true
+        # A composite field stored on a child node
+        address:
+          $type: compositeField
+          label: Address
+          itemProvider:
+            $type: jcrChildNodeProvider
+          properties:
+            street:
+              $type: textField
+              label: Street
+              i18n: true
+            city:
+              $type: textField
+              label: City
+        # A multi field of composite fields
+        links:
+          $type: jcrMultiField
+          label: Links
+          field:
+            $type: compositeField
+            properties:
+              linkLabel:
+                $type: textField
+                label: Link label
+                i18n: true
+              linkUrl:
+                $type: textField
+                label: Link URL
+        # Three levels: multi field, composite field on a child node, multi field of i18n text fields
+        blocks:
+          $type: jcrMultiField
+          label: Blocks
+          field:
+            $type: compositeField
+            properties:
+              blockTitle:
+                $type: textField
+                label: Block title
+                i18n: true
+              button:
+                $type: compositeField
+                label: Button
+                itemProvider:
+                  $type: jcrChildNodeProvider
+                properties:
+                  buttonLabel:
+                    $type: textField
+                    label: Button label
+                    i18n: true
+                  buttonUrl:
+                    $type: textField
+                    label: Button URL
+                  tags:
+                    $type: jcrMultiField
+                    label: Tags
+                    field:
+                      $type: textField
+                      i18n: true
+        # A switchable field: the fields of the chosen option are stored on the item itself
+        contact:
+          $type: switchableField
+          label: Contact
+          field:
+            $type: radioButtonGroupField
+            datasource:
+              $type: optionListDatasource
+              options:
+                - name: email
+                  value: email
+                  label: Email
+                - name: phone
+                  value: phone
+                  label: Phone
+          itemProvider:
+            $type: currentItemProvider
+          forms:
+            - name: email
+              properties:
+                email:
+                  $type: textField
+                  label: Email
+                  i18n: true
+            - name: phone
+              properties:
+                phone:
+                  $type: textField
+                  label: Phone
+    footerLayout:
+      $type: defaultEditorActionLayout
+      primaryActions:
+        commit: commit
+permissions:
+  roles:
+    superuser: superuser

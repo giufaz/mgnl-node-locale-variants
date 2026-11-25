@@ -66,7 +66,8 @@ result.variantMixins = itPage.getNode("localeVariants/variant_de").getMixinNodeT
 def promos = MgnlContext.getJCRSession("promos")
 reset(promos, ["promo-de", "promo-ch", "promo-plain", "promo-status", "promo-ref", "promo-ref-plain", "promo-ref-variant", "promo-n1", "promo-n2", "promo-x", "promo-y", "promo-ui", "promo-drag", "promo-folder",
         "promo-publish", "promo-publish-steps", "promo-delete", "promo-delete-published", "promo-delete-container",
-        "promo-export", "promo-edit", "promo-versions", "promo-form", "promo-restore-container", "promo-restore-original"])
+        "promo-export", "promo-edit", "promo-versions", "promo-version-restore", "promo-form", "promo-restore-container",
+        "promo-restore-original", "promo-nested", "promo-nested-copy"])
 def promo = { String name, String title ->
     def p = promos.getRootNode().addNode(name, "lvd:promo")
     p.setProperty("name", name)
@@ -89,9 +90,14 @@ promos.getRootNode().addNode("promo-folder", "mgnl:folder")
 // Only on author: they reach public when the scenarios publish them
 def onAuthor = Components.getComponent(info.magnolia.cms.beans.config.ServerConfiguration).isAdmin()
 def actionItems = !onAuthor ? [] : ["promo-publish", "promo-publish-steps", "promo-delete", "promo-delete-published",
-        "promo-delete-container", "promo-export", "promo-edit", "promo-versions", "promo-form",
+        "promo-delete-container", "promo-export", "promo-edit", "promo-versions", "promo-version-restore", "promo-form",
         "promo-restore-container", "promo-restore-original"].collect { promo(it, "Original") }
+// promo-nested: edited in the app "promosNested", whose form has i18n fields at every level of nesting
+def promoNested = !onAuthor ? null : promo("promo-nested", "Nested")
+// promo-nested-copy: no variant, its scenario fills the nested fields in two languages and then creates one
+if (onAuthor) promo("promo-nested-copy", "Nested copy")
 promos.save()
+if (promoNested != null) creator.create(promoNested, DE)
 creator.create(promoDe, DE)
 creator.create(promoCh, DE_CH)
 actionItems.each { creator.create(it, DE) }

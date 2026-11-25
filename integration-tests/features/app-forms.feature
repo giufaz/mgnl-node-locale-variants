@@ -11,6 +11,10 @@ Feature: A locale variant is edited in a form of one language, with its node nam
     * def promos = author + '/.rest/nodes/v1/promos'
     * def ctas = author + '/.rest/nodes/v1/ctas'
     * def property = function(node, name){ var p = node.properties.find(function(x){ return x.name == name }); return p ? p.values : [] }
+    # Every node and property under a node, as paths: address/street, links/links0/linkLabel, links/links0/ (a node)
+    * def flatten = function(node, prefix, out){ node.properties.forEach(function(p){ out[prefix + p.name] = p.values[0] }); (node.nodes || []).forEach(function(n){ out[prefix + n.name + '/'] = 'node'; flatten(n, prefix + n.name + '/', out) }); return out }
+    # The paths that end with a language of the demo site: title_de, links/links0_de/
+    * def localizedNames = function(paths){ return karate.keysOf(paths).filter(function(k){ return /_(en|de|de_CH)\/?$/.test(k) }) }
 
   # --- Detail sub-apps ---
 
@@ -86,3 +90,105 @@ Feature: A locale variant is edited in a form of one language, with its node nam
 
   # Not a defect: after a variant's dialog the original's dialog opens in the variant's language.
   # Magnolia keeps one current language per sub-app, and opening a variant is like picking its language.
+
+  # --- Nested fields (app "promosNested": a composite field on a child node, a multi field of composite fields,
+  # three levels of nesting, a switchable field; an i18n field at every level) ---
+
+  Scenario: the original's form with nested fields keeps its language switch
+    * ui.openBrowser('promosNested', '/promo-nested')
+    * ui.clickAction('Edit promo')
+    * match ui.formLanguages() contains 'German'
+
+  Scenario: a variant's form is in one language at every level of nested fields, and saves no localized property or node
+    * ui.openBrowser('promosNested', '/promo-nested/localeVariants/variant_de')
+    * ui.clickAction('Edit promo')
+    * match ui.formLanguages() !contains 'German'
+    * match ui.location() == 'app:promosNested:detail;/promo-nested/localeVariants/variant_de:edit'
+    # A link, a block, and a tag in the block's button
+    * ui.formAdd(0)
+    * ui.formAdd(1)
+    * ui.formAdd(1)
+    # Every i18n field, level by level, then one that is not i18n
+    * ui.formType('address.street', 'Hauptstrasse')
+    * ui.formType('links.0.linkLabel', 'Weiterlesen')
+    * ui.formType('blocks.0.blockTitle', 'Block eins')
+    * ui.formType('blocks.0.button.buttonLabel', 'Kaufen')
+    * ui.formType('blocks.0.button.tags.0.field', 'neu')
+    * ui.formType('contact.email.email', 'info@beispiel.de')
+    * ui.formType('address.city', 'Zürich')
+    * ui.screenshot()
+    * ui.formSave()
+    Given url promos + '/promo-nested/localeVariants/variant_de?depth=6'
+    When method get
+    Then status 200
+    * def saved = flatten(response, '', {})
+    * match saved['address/street'] == 'Hauptstrasse'
+    * match saved['address/city'] == 'Zürich'
+    * match saved['links/links0/linkLabel'] == 'Weiterlesen'
+    * match saved['blocks/blocks0/blockTitle'] == 'Block eins'
+    * match saved['blocks/blocks0/button/buttonLabel'] == 'Kaufen'
+    * match saved['blocks/blocks0/button/tags/tags0/field'] == 'neu'
+    * match saved['email'] == 'info@beispiel.de'
+    # Nothing was saved under a language: no title_de, no links0_de
+    * match localizedNames(saved) == []
+
+  Scenario: nested fields filled in English and in German on the original are in German, under their base names, in a new "de" variant; a field not translated keeps its English value
+    * ui.openBrowser('promosNested', '/promo-nested-copy')
+    * ui.clickAction('Edit promo')
+    * match ui.formLanguages() contains 'German'
+    # A link, a block, and a tag in the block's button, in English
+    * ui.formAdd(0)
+    * ui.formAdd(1)
+    * ui.formAdd(1)
+    * ui.formType('address.street', 'Main street')
+    * ui.formType('address.city', 'Zurich')
+    * ui.formType('links.0.linkLabel', 'Read more')
+    * ui.formType('links.0.linkUrl', '/more')
+    * ui.formType('blocks.0.blockTitle', 'Block one')
+    * ui.formType('blocks.0.button.buttonLabel', 'Buy')
+    * ui.formType('blocks.0.button.tags.0.field', 'new')
+    * ui.formType('contact.email.email', 'info@example.com')
+    * ui.formSave()
+    # The same i18n fields in German, except the block title, which stays not translated
+    * ui.openBrowser('promosNested', '/promo-nested-copy')
+    * ui.clickAction('Edit promo')
+    * ui.formSelectLanguage('German')
+    * ui.formType('address.street', 'Hauptstrasse')
+    * ui.formType('links.0.linkLabel', 'Weiterlesen')
+    * ui.formType('blocks.0.button.buttonLabel', 'Kaufen')
+    * ui.formType('blocks.0.button.tags.0.field', 'neu')
+    * ui.formType('contact.email.email', 'info@beispiel.de')
+    * ui.screenshot()
+    * ui.formSave()
+    # Magnolia saved the German values under localized names, at every level
+    Given url promos + '/promo-nested-copy?depth=6'
+    When method get
+    Then status 200
+    * def original = flatten(response, '', {})
+    * match original['address/street_de'] == 'Hauptstrasse'
+    * assert localizedNames(original).length > 3
+    # The variant, created from the app
+    * ui.openBrowser('promosNested', '/promo-nested-copy')
+    * ui.clickAction('Add language variant')
+    * ui.check('German')
+    * ui.clickDialogButton('Create')
+    * ui.waitForNotification('Language variants created: German')
+    Given url promos + '/promo-nested-copy/localeVariants/variant_de?depth=6'
+    When method get
+    Then status 200
+    * def variant = flatten(response, '', {})
+    * match variant['address/street'] == 'Hauptstrasse'
+    * match variant['address/city'] == 'Zurich'
+    * match variant['links/links0/linkLabel'] == 'Weiterlesen'
+    * match variant['links/links0/linkUrl'] == '/more'
+    # Not translated on the original: kept with its English value
+    * match variant['blocks/blocks0/blockTitle'] == 'Block one'
+    * match variant['blocks/blocks0/button/buttonLabel'] == 'Kaufen'
+    * match variant['blocks/blocks0/button/tags/tags0/field'] == 'neu'
+    * match variant['email'] == 'info@beispiel.de'
+    * match localizedNames(variant) == []
+    # And its form shows them
+    * ui.openBrowser('promosNested', '/promo-nested-copy/localeVariants/variant_de')
+    * ui.clickAction('Edit promo')
+    * match ui.formValue('links.0.linkLabel') == 'Weiterlesen'
+    * match ui.formValue('blocks.0.button.tags.0.field') == 'neu'

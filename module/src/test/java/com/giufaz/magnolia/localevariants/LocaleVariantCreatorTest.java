@@ -151,9 +151,54 @@ class LocaleVariantCreatorTest {
         assertEquals("Zurich", string(variant.getNode("address"), "city"));
         assertFalse(variant.getNode("address").hasProperty("street_de"));
         assertEquals("Strand", string(variant.getNode("gallery"), "caption"), "gallery_de replaces gallery");
-        assertEquals("Plage", string(variant.getNode("gallery"), "caption_fr"), "a localized child is copied as is");
+        assertFalse(variant.getNode("gallery").hasProperty("caption_fr"), "same rules inside a localized child");
         assertEquals(List.of("address", "gallery"), childNames(variant),
                 "no other-locale children, items, folders, ACLs or container");
+    }
+
+    // What Magnolia's form saves in German for a multi field of composite fields: the entry is renamed with the
+    // locale, and holds the base and the German value of its i18n fields
+    @Test
+    void test_create_localizedMultiFieldEntries() throws RepositoryException {
+        Node link = original.addNode("links", "mgnl:contentNode").addNode("links0_de", "mgnl:contentNode");
+        link.setProperty("linkLabel", "Read more");
+        link.setProperty("linkLabel_de", "Weiterlesen");
+        link.setProperty("linkUrl", "/more");
+        Node block = original.addNode("blocks", "mgnl:contentNode").addNode("blocks0_de", "mgnl:contentNode");
+        block.setProperty("blockTitle", "Block one");
+        block.setProperty("blockTitle_de", "Block eins");
+        Node button = block.addNode("button", "mgnl:contentNode");
+        button.setProperty("buttonLabel", "Buy");
+        button.setProperty("buttonLabel_de", "Kaufen");
+        Node tag = button.addNode("tags", "mgnl:contentNode").addNode("tags0_de", "mgnl:contentNode");
+        tag.setProperty("field", "new");
+        tag.setProperty("field_de", "neu");
+        // Not translated: an entry and a child node with no German name and no German value
+        Node plainLink = original.getNode("links").addNode("links1", "mgnl:contentNode");
+        plainLink.setProperty("linkLabel", "Contact");
+        plainLink.setProperty("linkUrl", "/contact");
+        Node footer = original.addNode("footer", "mgnl:contentNode");
+        footer.setProperty("note", "All rights reserved");
+        footer.addNode("logo", "mgnl:contentNode").setProperty("alt", "Logo");
+
+        Node variant = creator.create(original, Locale.GERMAN);
+
+        Node variantLink = variant.getNode("links/links0");
+        assertEquals("Weiterlesen", string(variantLink, "linkLabel"), "inside an entry that was renamed");
+        assertFalse(variantLink.hasProperty("linkLabel_de"));
+        assertEquals("/more", string(variantLink, "linkUrl"));
+        Node variantBlock = variant.getNode("blocks/blocks0");
+        assertEquals("Block eins", string(variantBlock, "blockTitle"));
+        assertEquals("Kaufen", string(variantBlock.getNode("button"), "buttonLabel"), "two levels down");
+        assertFalse(variantBlock.getNode("button").hasProperty("buttonLabel_de"));
+        assertEquals(List.of("tags0"), childNames(variantBlock.getNode("button/tags")), "three levels down");
+        assertEquals("neu", string(variantBlock.getNode("button/tags/tags0"), "field"));
+        assertFalse(variantBlock.getNode("button/tags/tags0").hasProperty("field_de"));
+        assertEquals(List.of("links0", "links1"), childNames(variant.getNode("links")), "the entry not translated is kept");
+        assertEquals("Contact", string(variant.getNode("links/links1"), "linkLabel"), "with its base value");
+        assertEquals("/contact", string(variant.getNode("links/links1"), "linkUrl"));
+        assertEquals("All rights reserved", string(variant.getNode("footer"), "note"), "a child not translated is kept");
+        assertEquals("Logo", string(variant.getNode("footer/logo"), "alt"), "with what is under it");
     }
 
     @Test
